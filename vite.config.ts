@@ -15,9 +15,10 @@ export default defineConfig({
     port: 3000,
     host: '0.0.0.0',
     proxy: {
-      // Proxies all /api requests to FastAPI backend running on port 8000
+      // Proxies all /api requests to your FastAPI backend
       '/api': {
-        target: process.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000',
+        // Updated to point to your deployed Render backend
+        target: 'https://findjobsbackend-2xge.onrender.com', 
         changeOrigin: true,
         secure: false,
       },
