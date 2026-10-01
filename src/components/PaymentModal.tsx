@@ -14,6 +14,26 @@ import {
   CreditCard,
 } from 'lucide-react';
 
+// Loads Razorpay's checkout script only when the user clicks Pay
+const loadRazorpay = (): Promise<boolean> =>
+  new Promise((resolve) => {
+    if ((window as any).Razorpay) return resolve(true);
+
+    const existing = document.getElementById('razorpay-checkout-script');
+    if (existing) {
+      existing.addEventListener('load', () => resolve(true));
+      existing.addEventListener('error', () => resolve(false));
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.id = 'razorpay-checkout-script';
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+
 interface PaymentModalProps {
   packageItem: Package;
   onClose: () => void;
@@ -47,6 +67,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     setError(null);
 
     try {
+      // 0. Make sure the Razorpay script is loaded before creating an order
+      const gatewayReady = await loadRazorpay();
+      if (!gatewayReady) {
+        throw new Error('Payment gateway failed to load. Please refresh and try again.');
+      }
+
       // 1. Create order on server (server looks up price from DB)
       const orderRes = await fetch('/api/payments/create-order', {
         method: 'POST',

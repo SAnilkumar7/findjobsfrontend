@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { User, AdminUser, AccessSummary } from '../types/index.ts';
 
+const API_URL = ((import.meta.env.VITE_BACKEND_URL as string) || '').replace(/\/$/, '');
+
 interface AuthContextType {
   user: User | null;
   admin: AdminUser | null;
@@ -32,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     try {
-      const res = await fetch('/api/access', {
+      const res = await fetch(`${API_URL}/api/access`, {
         headers: { Authorization: `Bearer ${currentToken}` },
       });
       if (res.ok) {
@@ -59,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const res = await fetch('/api/auth/me', {
+      const res = await fetch(`${API_URL}/api/auth/me`, {
         headers: { Authorization: `Bearer ${currentToken}` },
       });
       if (res.ok) {
@@ -107,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch(`${API_URL}/api/auth/logout`, { method: 'POST' });
     } catch (e) {}
     localStorage.removeItem('token');
     setToken(null);
