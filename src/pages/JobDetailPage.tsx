@@ -384,12 +384,6 @@
 
 
 
-
-
-
-
-
-
 import React, { useEffect, useState } from 'react';
 import type { Job } from '../types/index.ts';
 import { useAuth } from '../context/AuthContext.tsx';
@@ -427,6 +421,7 @@ export const JobDetailPage: React.FC<JobDetailPageProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [categorySlug, setCategorySlug] = useState<string>('it');
   const [copied, setCopied] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false); // NEW
   const [imgFailed, setImgFailed] = useState(false);
 
   useEffect(() => {
@@ -483,7 +478,9 @@ export const JobDetailPage: React.FC<JobDetailPageProps> = ({
     return () => controller.abort();
   }, [jobId, token]);
 
-  const handleShare = async () => {
+  /* ---------- Share logic (NEW) ---------- */
+
+  const copyLink = async () => {
     try {
       await navigator.clipboard?.writeText(window.location.href);
       setCopied(true);
@@ -491,6 +488,40 @@ export const JobDetailPage: React.FC<JobDetailPageProps> = ({
     } catch {
       /* clipboard blocked, ignore */
     }
+  };
+
+  // Tap on Share: copy the link AND always open our own share popup
+  const handleShare = () => {
+    void copyLink();
+    setShowShareMenu(true);
+  };
+
+  const canNativeShare =
+    typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
+  // "More apps" -> phone's own share sheet (includes Instagram, etc.)
+  const nativeShare = async () => {
+    const title = job ? `${job.title} at ${job.company_name}` : 'Job opening';
+    try {
+      await navigator.share({ title, text: title, url: window.location.href });
+    } catch {
+      /* user cancelled or not supported */
+    }
+    setShowShareMenu(false);
+  };
+
+  const getShareLinks = () => {
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent(
+      job ? `${job.title} at ${job.company_name}` : 'Job opening'
+    );
+    return [
+      { name: 'WhatsApp', href: `https://wa.me/?text=${text}%20${url}` },
+      { name: 'Telegram', href: `https://t.me/share/url?url=${url}&text=${text}` },
+      { name: 'Facebook', href: `https://www.facebook.com/sharer/sharer.php?u=${url}` },
+      { name: 'X (Twitter)', href: `https://twitter.com/intent/tweet?url=${url}&text=${text}` },
+      { name: 'Email', href: `mailto:?subject=${text}&body=${url}` },
+    ];
   };
 
   const pkg = getPackageBySlug(categorySlug) || { price: 49, name: 'Job Access' };
@@ -626,13 +657,86 @@ export const JobDetailPage: React.FC<JobDetailPageProps> = ({
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-              <button
-                onClick={handleShare}
-                className="px-3.5 py-3 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center justify-center gap-1.5"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>{copied ? 'Link Copied!' : 'Share'}</span>
-              </button>
+              {/* Share button + fallback menu (UPDATED) */}
+              <div className="relative">
+                <button
+                  onClick={handleShare}
+                  className="w-full px-3.5 py-3 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span>{copied ? 'Link Copied!' : 'Share'}</span>
+                </button>
+
+                {showShareMenu && (
+                  <div
+                    className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4"
+                    onClick={() => setShowShareMenu(false)}
+                  >
+                    <div
+                      className="w-full max-w-sm bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                        <h4 className="text-sm font-bold text-slate-900">Share this job</h4>
+                        <button
+                          onClick={() => setShowShareMenu(false)}
+                          className="text-xs font-semibold text-slate-500 hover:text-slate-800"
+                        >
+                          Close
+                        </button>
+                      </div>
+
+                      <div className="p-2">
+                        {getShareLinks().map((l) => (
+                          <a
+                            key={l.name}
+                            href={l.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => setShowShareMenu(false)}
+                            className="block px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                          >
+                            {l.name}
+                          </a>
+                        ))}
+
+                        {/* Instagram has no web share URL: link is already copied, so open Instagram to paste */}
+                        <a
+                          href="https://www.instagram.com/direct/inbox/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => {
+                            void copyLink();
+                            setShowShareMenu(false);
+                          }}
+                          className="block px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                        >
+                          Instagram (link copied, paste in chat)
+                        </a>
+
+                        {canNativeShare && (
+                          <button
+                            onClick={nativeShare}
+                            className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                          >
+                            More apps...
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => {
+                            void copyLink();
+                            setShowShareMenu(false);
+                          }}
+                          className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 border-t border-slate-100 mt-1"
+                        >
+                          Copy link
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {applyUrl ? (
                 <a
