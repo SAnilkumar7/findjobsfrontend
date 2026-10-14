@@ -1,8 +1,22 @@
-// import React, { useEffect, useState, useMemo } from 'react';
+
+
+
+
+// import React, {
+//   useDeferredValue,
+//   useEffect,
+//   useMemo,
+//   useState,
+// } from 'react';
 // import type { Job } from '../types/index.ts';
 // import { useAuth } from '../context/AuthContext.tsx';
 // import { usePackages } from '../context/PackagesContext.tsx';
-// import { JobCard } from '../components/JobCard.tsx';
+// import {
+//   JobCard,
+//   CardBoundary,
+//   sanitizeJob,
+//   toTime,
+// } from '../components/JobCard.tsx';
 // import {
 //   Lock,
 //   Search,
@@ -12,7 +26,6 @@
 //   Landmark,
 //   Sparkles,
 //   ArrowRight,
-//   ShieldAlert,
 //   Loader2,
 //   AlertCircle,
 // } from 'lucide-react';
@@ -22,6 +35,8 @@
 //   navigate: (path: string) => void;
 //   onOpenCheckout: (slug: string) => void;
 // }
+
+// const PAGE_SIZE = 18;
 
 // export const JobsCategoryPage: React.FC<JobsCategoryPageProps> = ({
 //   categorySlug,
@@ -35,10 +50,12 @@
 //   const [loading, setLoading] = useState(true);
 //   const [isLocked, setIsLocked] = useState(false);
 //   const [error, setError] = useState<string | null>(null);
+//   const [reloadKey, setReloadKey] = useState(0);
 
-//   // Search and Sort controls
 //   const [searchQuery, setSearchQuery] = useState('');
+//   const deferredQuery = useDeferredValue(searchQuery);
 //   const [sortBy, setSortBy] = useState<'latest' | 'oldest' | 'deadline'>('latest');
+//   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
 //   const pkg = getPackageBySlug(categorySlug) || {
 //     id: `pkg_${categorySlug}`,
@@ -77,6 +94,8 @@
 //   };
 
 //   useEffect(() => {
+//     const controller = new AbortController();
+
 //     const fetchJobs = async () => {
 //       setLoading(true);
 //       setError(null);
@@ -89,41 +108,54 @@
 //       }
 
 //       try {
-//         const url = `/api/jobs/category/${categorySlug}`;
-//         const res = await fetch(url, {
-//           headers: {
-//             Authorization: `Bearer ${token}`,
-//           },
-//         });
+//         const res = await fetch(
+//           `/api/jobs/category/${encodeURIComponent(categorySlug)}`,
+//           {
+//             headers: { Authorization: `Bearer ${token}` },
+//             signal: controller.signal,
+//           }
+//         );
 
 //         if (res.status === 403) {
 //           setIsLocked(true);
-//           setLoading(false);
 //           return;
 //         }
-
+//         if (res.status === 429) {
+//           throw new Error('Too many requests. Please wait a moment and try again.');
+//         }
 //         if (!res.ok) {
 //           throw new Error('Failed to retrieve job listings');
 //         }
 
 //         const data = await res.json();
-//         setJobs(data);
+//         const list: any[] = Array.isArray(data)
+//           ? data
+//           : Array.isArray(data?.jobs)
+//             ? data.jobs
+//             : [];
+
+//         setJobs(list.filter((j) => j && j.id != null).map(sanitizeJob));
 //       } catch (err: any) {
-//         setError(err.message || 'Error fetching jobs');
+//         if (err?.name === 'AbortError') return;
+//         setError(err?.message || 'Error fetching jobs');
 //       } finally {
-//         setLoading(false);
+//         if (!controller.signal.aborted) setLoading(false);
 //       }
 //     };
 
 //     fetchJobs();
-//   }, [categorySlug, token, access]);
+//     return () => controller.abort();
+//   }, [categorySlug, token, access, reloadKey]);
 
-//   // Client-side search and sort (Section 7)
+//   useEffect(() => {
+//     setVisibleCount(PAGE_SIZE);
+//   }, [categorySlug, deferredQuery, sortBy]);
+
 //   const filteredJobs = useMemo(() => {
 //     let result = [...jobs];
 
-//     if (searchQuery.trim()) {
-//       const q = searchQuery.toLowerCase();
+//     const q = deferredQuery.trim().toLowerCase();
+//     if (q) {
 //       result = result.filter(
 //         (j) =>
 //           j.title.toLowerCase().includes(q) ||
@@ -134,20 +166,18 @@
 //     }
 
 //     result.sort((a, b) => {
-//       if (sortBy === 'latest') {
-//         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-//       }
-//       if (sortBy === 'oldest') {
-//         return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-//       }
-//       if (sortBy === 'deadline') {
-//         return a.deadline.localeCompare(b.deadline);
-//       }
-//       return 0;
+//       if (sortBy === 'latest') return toTime(b.created_at) - toTime(a.created_at);
+//       if (sortBy === 'oldest') return toTime(a.created_at) - toTime(b.created_at);
+//       return a.deadline.localeCompare(b.deadline);
 //     });
 
 //     return result;
-//   }, [jobs, searchQuery, sortBy]);
+//   }, [jobs, deferredQuery, sortBy]);
+
+//   const visibleJobs = useMemo(
+//     () => filteredJobs.slice(0, visibleCount),
+//     [filteredJobs, visibleCount]
+//   );
 
 //   return (
 //     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -162,7 +192,7 @@
 //               <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
 //                 {getCategoryTitle()}
 //               </h1>
-//               {!isLocked && (
+//               {!isLocked && !loading && !error && (
 //                 <span className="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full">
 //                   Unlocked
 //                 </span>
@@ -197,7 +227,6 @@
 //         </div>
 //       </div>
 
-//       {/* Locked State / 403 Handler (Section 3 & 7) */}
 //       {isLocked ? (
 //         <div className="max-w-xl mx-auto bg-white rounded-3xl border border-slate-200 shadow-lg p-8 text-center space-y-5 my-8">
 //           <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto shadow-xs">
@@ -216,7 +245,6 @@
 //             </p>
 //           </div>
 
-//           {/* Pricing Box */}
 //           <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-center">
 //             <div className="text-3xl font-extrabold text-slate-900">
 //               {formatPrice(pkg.price)}
@@ -242,7 +270,9 @@
 //                 className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
 //               >
 //                 <Lock className="w-4 h-4" />
-//                 <span>Unlock {pkg.name} ({formatPrice(pkg.price)})</span>
+//                 <span>
+//                   Unlock {pkg.name} ({formatPrice(pkg.price)})
+//                 </span>
 //               </button>
 //             )}
 
@@ -256,21 +286,32 @@
 //           </div>
 //         </div>
 //       ) : loading ? (
-//         /* Loading Skeleton */
 //         <div className="py-16 text-center text-slate-400 space-y-3">
 //           <Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-600" />
 //           <p className="text-sm">Verifying server access & loading verified jobs...</p>
 //         </div>
+//       ) : error ? (
+//         <div className="max-w-md mx-auto bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3 my-8">
+//           <AlertCircle className="w-10 h-10 mx-auto text-red-400" />
+//           <h3 className="font-bold text-slate-800">Couldn&apos;t load jobs</h3>
+//           <p className="text-xs text-slate-500">{error}</p>
+//           <button
+//             onClick={() => setReloadKey((k) => k + 1)}
+//             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl"
+//           >
+//             Retry
+//           </button>
+//         </div>
 //       ) : (
-//         /* Unlocked View: Search, Filter, and Job Cards */
 //         <div className="space-y-6">
-//           {/* Controls Bar: Search & Sort (Section 7) */}
+//           {/* Controls Bar */}
 //           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
 //             <div className="relative w-full sm:w-80">
 //               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
 //               <input
 //                 type="text"
 //                 value={searchQuery}
+//                 maxLength={100}
 //                 onChange={(e) => setSearchQuery(e.target.value)}
 //                 placeholder="Search title, company, city, skill..."
 //                 className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
@@ -283,7 +324,9 @@
 //               </span>
 //               <select
 //                 value={sortBy}
-//                 onChange={(e) => setSortBy(e.target.value as any)}
+//                 onChange={(e) =>
+//                   setSortBy(e.target.value as 'latest' | 'oldest' | 'deadline')
+//                 }
 //                 className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
 //               >
 //                 <option value="latest">Latest Posted</option>
@@ -314,21 +357,40 @@
 //               )}
 //             </div>
 //           ) : (
-//             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-//               {filteredJobs.map((job) => (
-//                 <JobCard
-//                   key={job.id}
-//                   job={job}
-//                   onClick={() => navigate(`/jobs/view/${job.id}`)}
-//                 />
-//               ))}
-//             </div>
+//             <>
+//               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+//                 {visibleJobs.map((job) => (
+//                   <CardBoundary key={job.id}>
+//                     <JobCard
+//                       job={job}
+//                       onClick={() => navigate(`/jobs/view/${job.id}`)}
+//                     />
+//                   </CardBoundary>
+//                 ))}
+//               </div>
+
+//               {visibleCount < filteredJobs.length && (
+//                 <div className="text-center pt-2">
+//                   <button
+//                     onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+//                     className="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl transition-colors"
+//                   >
+//                     Load more ({filteredJobs.length - visibleCount} remaining)
+//                   </button>
+//                 </div>
+//               )}
+//             </>
 //           )}
 //         </div>
 //       )}
 //     </div>
 //   );
 // };
+
+
+
+
+
 
 
 
@@ -383,6 +445,23 @@ interface JobsCategoryPageProps {
 }
 
 const PAGE_SIZE = 18;
+
+/* In-memory cache: coming back to a category shows jobs instantly,
+   while a fresh copy is fetched quietly in the background. */
+const jobsCache = new Map<string, Job[]>();
+
+/* Placeholder card shown while jobs load (instead of a blank spinner screen) */
+const JobCardSkeleton: React.FC = () => (
+  <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 animate-pulse">
+    <div className="h-28 bg-slate-100 rounded-xl" />
+    <div className="h-4 bg-slate-200 rounded w-3/4" />
+    <div className="h-3 bg-slate-100 rounded w-1/2" />
+    <div className="flex gap-2 pt-1">
+      <div className="h-5 w-16 bg-slate-100 rounded-full" />
+      <div className="h-5 w-20 bg-slate-100 rounded-full" />
+    </div>
+  </div>
+);
 
 export const JobsCategoryPage: React.FC<JobsCategoryPageProps> = ({
   categorySlug,
@@ -443,14 +522,23 @@ export const JobsCategoryPage: React.FC<JobsCategoryPageProps> = ({
     const controller = new AbortController();
 
     const fetchJobs = async () => {
-      setLoading(true);
       setError(null);
       setIsLocked(false);
 
       if (!token) {
-        setIsLocked(true);
         setLoading(false);
+        setIsLocked(true);
         return;
+      }
+
+      // Show the cached list right away (if we have one), then refresh quietly
+      const cacheKey = `${token}|${categorySlug}`;
+      const cached = jobsCache.get(cacheKey);
+      if (cached) {
+        setJobs(cached);
+        setLoading(false);
+      } else {
+        setLoading(true);
       }
 
       try {
@@ -463,6 +551,7 @@ export const JobsCategoryPage: React.FC<JobsCategoryPageProps> = ({
         );
 
         if (res.status === 403) {
+          jobsCache.delete(cacheKey);
           setIsLocked(true);
           return;
         }
@@ -480,10 +569,13 @@ export const JobsCategoryPage: React.FC<JobsCategoryPageProps> = ({
             ? data.jobs
             : [];
 
-        setJobs(list.filter((j) => j && j.id != null).map(sanitizeJob));
+        const mapped = list.filter((j) => j && j.id != null).map(sanitizeJob);
+        jobsCache.set(cacheKey, mapped);
+        setJobs(mapped);
       } catch (err: any) {
         if (err?.name === 'AbortError') return;
-        setError(err?.message || 'Error fetching jobs');
+        // Keep showing the cached list instead of an error screen if we have one
+        if (!cached) setError(err?.message || 'Error fetching jobs');
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -632,9 +724,17 @@ export const JobsCategoryPage: React.FC<JobsCategoryPageProps> = ({
           </div>
         </div>
       ) : loading ? (
-        <div className="py-16 text-center text-slate-400 space-y-3">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-600" />
-          <p className="text-sm">Verifying server access & loading verified jobs...</p>
+        <div className="space-y-6" aria-busy="true">
+          {/* Placeholder controls bar */}
+          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs animate-pulse">
+            <div className="h-9 w-full sm:w-80 bg-slate-100 rounded-xl" />
+          </div>
+          {/* Placeholder cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <JobCardSkeleton key={i} />
+            ))}
+          </div>
         </div>
       ) : error ? (
         <div className="max-w-md mx-auto bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3 my-8">
