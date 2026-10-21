@@ -1,3 +1,4 @@
+
 // import React, { useState, useEffect, useRef } from 'react';
 
 // import { useAuth } from '../context/AuthContext.tsx';
@@ -40,6 +41,7 @@
 //   const [phone, setPhone] = useState('');
 //   const [age, setAge] = useState('');
 //   const [location, setLocation] = useState('');
+//   const [marketingOptIn, setMarketingOptIn] = useState(false);
 
 //   const [loading, setLoading] = useState(false);
 //   const [error, setError] = useState<string | null>(null);
@@ -612,6 +614,21 @@
 //             </div>
 //           </div>
 
+//           {/* Marketing opt-in (optional, unchecked by default) */}
+//           <label className="flex items-start gap-2.5 text-xs text-slate-600 cursor-pointer">
+//             <input
+//               type="checkbox"
+//               id="register-marketing-optin"
+//               checked={marketingOptIn}
+//               onChange={(e) => setMarketingOptIn(e.target.checked)}
+//               className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+//             />
+//             <span>
+//               I agree to receive marketing emails and updates fromFindMyJobs.{' '}
+//               <span className="text-slate-400">(Optional)</span>
+//             </span>
+//           </label>
+
 //           {/* Submit Button */}
 //           <button
 //             id="register-submit-btn"
@@ -660,8 +677,6 @@
 
 
 
-
-
 import React, { useState, useEffect, useRef } from 'react';
 
 import { useAuth } from '../context/AuthContext.tsx';
@@ -694,6 +709,23 @@ declare global {
     google?: any;
   }
 }
+
+// Safely parse JSON (gateway errors / cold starts may return non-JSON bodies)
+const safeJson = async (res: Response): Promise<any> => {
+  try {
+    return await res.json();
+  } catch {
+    return {};
+  }
+};
+
+// Extract a readable message from FastAPI errors (string or 422 validation array)
+const getErrorMessage = (data: any, fallback: string): string => {
+  if (!data) return fallback;
+  if (typeof data.detail === 'string') return data.detail;
+  if (Array.isArray(data.detail)) return data.detail[0]?.msg || fallback;
+  return fallback;
+};
 
 export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
   const { login } = useAuth();
@@ -798,18 +830,18 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
         }),
       });
 
-      const data = await res.json();
+      const data = await safeJson(res);
 
       if (!res.ok) {
-        throw new Error(data.detail || 'Google sign-up failed');
+        throw new Error(getErrorMessage(data, 'Google sign-up failed'));
       }
 
       login(data.token, data.user);
       navigate('/dashboard');
     } catch (err: any) {
-      // FIXED: Extract specific error message from FastAPI 422 validation array
+      // Extract specific error message (including FastAPI 422 validation arrays)
       let errorMessage = 'Google sign-up failed';
-      
+
       if (err.message) {
         errorMessage = err.message;
       } else if (err.detail && Array.isArray(err.detail)) {
@@ -826,8 +858,13 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
     }
   };
 
-  const startCooldown = () => {
-    setResendCooldown(30);
+  // Cooldown matches the backend's 60-second resend limit
+  const startCooldown = (seconds: number = 60) => {
+    if (cooldownRef.current) {
+      clearInterval(cooldownRef.current);
+    }
+
+    setResendCooldown(seconds);
 
     cooldownRef.current = setInterval(() => {
       setResendCooldown((prev) => {
@@ -847,11 +884,13 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
   const handleEmailChange = (value: string) => {
     setEmail(value);
 
-    if (otpVerified) {
+    // Reset OTP state whenever the email changes after an OTP was sent/verified
+    if (otpVerified || otpSent) {
       setOtpVerified(false);
       setOtpSent(false);
       setOtpCode('');
       setOtpMessage(null);
+      setOtpError(null);
     }
   };
 
@@ -876,16 +915,22 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
         }),
       });
 
-      const data = await res.json();
+      const data = await safeJson(res);
 
       if (!res.ok) {
-        throw new Error(data.detail || 'Failed to send OTP');
+        // Sync the timer with the server's "Please wait N seconds" message
+        if (res.status === 429) {
+          const match = /(\d+)\s*seconds/.exec(data.detail || '');
+          if (match) startCooldown(Number(match[1]));
+        }
+        throw new Error(getErrorMessage(data, 'Failed to send OTP'));
       }
 
       setOtpSent(true);
       setOtpMessage('OTP sent! Check your email inbox.');
+      setOtpCode('');
 
-      startCooldown();
+      startCooldown(60);
     } catch (err: any) {
       setOtpError(err.message || 'Failed to send OTP');
     } finally {
@@ -914,10 +959,14 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
         }),
       });
 
-      const data = await res.json();
+      const data = await safeJson(res);
 
       if (!res.ok) {
-        throw new Error(data.detail || 'Incorrect OTP');
+        // After too many wrong attempts the backend locks this OTP, so clear the box
+        if (res.status === 429) {
+          setOtpCode('');
+        }
+        throw new Error(getErrorMessage(data, 'Incorrect OTP'));
       }
 
       setOtpVerified(true);
@@ -958,10 +1007,10 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
         }),
       });
 
-      const data = await res.json();
+      const data = await safeJson(res);
 
       if (!res.ok) {
-        throw new Error(data.detail || 'Registration failed');
+        throw new Error(getErrorMessage(data, 'Registration failed'));
       }
 
       login(data.token, data.user);
@@ -1287,7 +1336,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
               className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
             />
             <span>
-              I agree to receive marketing emails and updates fromFindMyJobs.{' '}
+              I agree to receive marketing emails and updates from FindMyJobs.{' '}
               <span className="text-slate-400">(Optional)</span>
             </span>
           </label>
