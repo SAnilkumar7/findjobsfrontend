@@ -371,7 +371,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ navigate, onOpenChecko
             Important Notice on Application Links:
           </p>
           <p>
-            {settings?.site_name || 'JobAccess'} is a curated job listing and link provider. Users never apply inside this application. Clicking &quot;Apply Now&quot; sends you to original employer application URLs. We do not participate in candidate selection or employment decisions.
+            {settings?.site_name || 'FindMyJobs'} is a curated job listing and link provider. Users never apply inside this application. Clicking &quot;Apply Now&quot; sends you to original employer application URLs. We do not participate in candidate selection or employment decisions.
           </p>
         </div>
       </section>

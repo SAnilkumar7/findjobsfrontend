@@ -8,7 +8,7 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ navigate }) => {
   const { settings } = usePackages();
-  const siteName = settings?.site_name || 'JobAccess';
+  const siteName = settings?.site_name || 'FindMyJobs';
 
   return (
     <footer className="border-t border-slate-200 bg-white text-slate-600 mt-auto">

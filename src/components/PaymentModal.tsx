@@ -99,7 +99,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         key: orderData.key_id,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: 'JobAccess India',
+        name: 'FindMyJobs India',
         description: `Unlock ${packageItem.name}`,
         order_id: orderData.order_id,
         prefill: {

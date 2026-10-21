@@ -18,14 +18,14 @@ export const LegalPages: React.FC<LegalPageProps> = ({ type, navigate }) => {
             <section className="space-y-2">
               <h2 className="text-base font-bold text-slate-900">1. Nature of the Platform</h2>
               <p>
-                JobAccess is a paid information aggregator that provides curated access to verified job listings across IT, Non-IT, and Banking sectors. We provide users with direct links to external employer application URLs.
+                FindMyJobs is a paid information aggregator that provides curated access to verified job listings across IT, Non-IT, and Banking sectors. We provide users with direct links to external employer application URLs.
               </p>
             </section>
 
             <section className="space-y-2">
               <h2 className="text-base font-bold text-slate-900">2. External Applications</h2>
               <p>
-                Job applications are conducted entirely on third-party employer career sites, ATS platforms, or official corporate portals. JobAccess does not collect job applications, resumes, or interview submissions directly inside the application.
+                Job applications are conducted entirely on third-party employer career sites, ATS platforms, or official corporate portals. FindMyJobs does not collect job applications, resumes, or interview submissions directly inside the application.
               </p>
             </section>
 
@@ -61,7 +61,7 @@ export const LegalPages: React.FC<LegalPageProps> = ({ type, navigate }) => {
             <section className="space-y-2">
               <h2 className="text-base font-bold text-slate-900">2. Payment Security</h2>
               <p>
-                Payments are securely processed via Razorpay. JobAccess does not store credit card numbers, debit card details, CVVs, or UPI PINs on our servers. All transactions are protected by industry-standard 256-bit SSL encryption.
+                Payments are securely processed via Razorpay.FindMyJobs does not store credit card numbers, debit card details, CVVs, or UPI PINs on our servers. All transactions are protected by industry-standard 256-bit SSL encryption.
               </p>
             </section>
 
@@ -104,7 +104,7 @@ export const LegalPages: React.FC<LegalPageProps> = ({ type, navigate }) => {
               <div>
                 <h3 className="font-bold text-amber-900 text-sm">Mandatory Hiring Notice</h3>
                 <p className="text-xs text-amber-800 mt-1">
-                  JobAccess does not guarantee interviews, selection, or hiring outcomes. We provide curated job information and external links only.
+                  FindMyJobs does not guarantee interviews, selection, or hiring outcomes. We provide curated job information and external links only.
                 </p>
               </div>
             </div>
@@ -115,14 +115,14 @@ export const LegalPages: React.FC<LegalPageProps> = ({ type, navigate }) => {
             <section className="space-y-2">
               <h2 className="text-base font-bold text-slate-900">1. Information & Aggregation Notice</h2>
               <p>
-                All job postings displayed on JobAccess are curated from public employer hiring notices, corporate career websites, and verified recruitment channels. While we strive for accuracy, job vacancies, salaries, and application deadlines are determined solely by the respective hiring companies and are subject to change without notice.
+                All job postings displayed on FindMyJobs are curated from public employer hiring notices, corporate career websites, and verified recruitment channels. While we strive for accuracy, job vacancies, salaries, and application deadlines are determined solely by the respective hiring companies and are subject to change without notice.
               </p>
             </section>
 
             <section className="space-y-2">
               <h2 className="text-base font-bold text-slate-900">2. No Guarantee of Employment</h2>
               <p>
-                JobAccess is an informational platform, not an employer or staffing agency. We do not evaluate resumes, schedule interviews, or influence hiring decisions in any capacity. Your application is submitted directly to the employer through their official link.
+                FindMyJobs is an informational platform, not an employer or staffing agency. We do not evaluate resumes, schedule interviews, or influence hiring decisions in any capacity. Your application is submitted directly to the employer through their official link.
               </p>
             </section>
 

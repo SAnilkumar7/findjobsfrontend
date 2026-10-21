@@ -1287,7 +1287,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
               className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
             />
             <span>
-              I agree to receive marketing emails and updates from JobAccess.{' '}
+              I agree to receive marketing emails and updates fromFindMyJobs.{' '}
               <span className="text-slate-400">(Optional)</span>
             </span>
           </label>
