@@ -55,7 +55,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
               {siteTitle}
             </span>
             <span className="text-[10px] font-semibold text-indigo-600 tracking-wider uppercase">
-              Paid Job Access
+              Instant Job Access
             </span>
           </div>
         </div>
