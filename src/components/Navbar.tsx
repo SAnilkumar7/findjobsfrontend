@@ -436,8 +436,8 @@ import {
   MessageSquare,
 } from 'lucide-react';
 
-// paste your Google Form link here
-const QUERIES_FORM_URL = 'https://forms.gle/YOUR_FORM_LINK';
+// Google Form link (Bug report / Feedback / Job queries)
+const QUERIES_FORM_URL = 'https://forms.gle/31fiNQH8WwSw241i8';
 
 interface NavbarProps {
   currentPath: string;
@@ -628,7 +628,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
             </button>
           )}
 
-          {/* Queries — now the LAST item (opens Google Form in a new tab) */}
+          {/* Queries — the LAST item (opens Google Form in a new tab) */}
           <a
             id="nav-link-queries"
             href={QUERIES_FORM_URL}
@@ -804,7 +804,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
             </div>
           )}
 
-          {/* Queries — now the LAST menu item (opens Google Form in a new tab) */}
+          {/* Queries — the LAST menu item (opens Google Form in a new tab) */}
           <a
             href={QUERIES_FORM_URL}
             target="_blank"
