@@ -416,10 +416,6 @@
 
 
 
-
-
-
-
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { usePackages } from '../context/PackagesContext.tsx';
@@ -435,9 +431,6 @@ import {
   Sparkles,
   MessageSquare,
 } from 'lucide-react';
-
-// Google Form link (Bug report / Feedback / Job queries)
-const QUERIES_FORM_URL = 'https://forms.gle/31fiNQH8WwSw241i8';
 
 interface NavbarProps {
   currentPath: string;
@@ -591,6 +584,19 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
             Pricing
           </button>
 
+          {/* Queries — right after Pricing (opens the in-app Queries page) */}
+          <button
+            id="nav-link-queries"
+            onClick={() => handleNav('/queries')}
+            className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 ${
+              currentPath === '/queries'
+                ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                : 'hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            Queries
+          </button>
+
           {user && (
             <>
               <button
@@ -627,18 +633,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
               <ShieldCheck className="w-3.5 h-3.5 text-amber-700" /> Admin Console
             </button>
           )}
-
-          {/* Queries — the LAST item (opens Google Form in a new tab) */}
-          <a
-            id="nav-link-queries"
-            href={QUERIES_FORM_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-3 py-2 rounded-lg transition-colors hover:text-slate-900 hover:bg-slate-100 flex items-center gap-1.5"
-          >
-            <MessageSquare className="w-4 h-4 text-slate-400" />
-            Queries
-          </a>
         </nav>
 
         {/* User Right Section */}
@@ -754,6 +748,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
             Pricing
           </button>
 
+          {/* Queries — right after Pricing (opens the in-app Queries page) */}
+          <button
+            onClick={() => handleNav('/queries')}
+            className={`w-full text-left px-3 py-2 rounded-lg text-base font-medium flex items-center gap-2 ${
+              currentPath === '/queries' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-800'
+            }`}
+          >
+            Queries
+          </button>
+
           {user ? (
             <>
               <button
@@ -764,6 +768,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
               >
                 Dashboard
               </button>
+              
               <button
                 onClick={() => handleNav('/my-access')}
                 className={`w-full text-left px-3 py-2 rounded-lg text-base font-medium ${
@@ -803,17 +808,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
               </button>
             </div>
           )}
-
-          {/* Queries — the LAST menu item (opens Google Form in a new tab) */}
-          <a
-            href={QUERIES_FORM_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => setMobileMenuOpen(false)}
-            className="w-full text-left px-3 py-2 rounded-lg text-base font-medium text-slate-800 flex items-center gap-2"
-          >
-            <MessageSquare className="w-4 h-4 text-slate-400" /> Queries
-          </a>
 
           <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>Admin Portal</span>
