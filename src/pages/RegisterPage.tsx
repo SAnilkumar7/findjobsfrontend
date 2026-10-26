@@ -32,6 +32,23 @@
 //   }
 // }
 
+// // Safely parse JSON (gateway errors / cold starts may return non-JSON bodies)
+// const safeJson = async (res: Response): Promise<any> => {
+//   try {
+//     return await res.json();
+//   } catch {
+//     return {};
+//   }
+// };
+
+// // Extract a readable message from FastAPI errors (string or 422 validation array)
+// const getErrorMessage = (data: any, fallback: string): string => {
+//   if (!data) return fallback;
+//   if (typeof data.detail === 'string') return data.detail;
+//   if (Array.isArray(data.detail)) return data.detail[0]?.msg || fallback;
+//   return fallback;
+// };
+
 // export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
 //   const { login } = useAuth();
 
@@ -135,18 +152,18 @@
 //         }),
 //       });
 
-//       const data = await res.json();
+//       const data = await safeJson(res);
 
 //       if (!res.ok) {
-//         throw new Error(data.detail || 'Google sign-up failed');
+//         throw new Error(getErrorMessage(data, 'Google sign-up failed'));
 //       }
 
 //       login(data.token, data.user);
 //       navigate('/dashboard');
 //     } catch (err: any) {
-//       // FIXED: Extract specific error message from FastAPI 422 validation array
+//       // Extract specific error message (including FastAPI 422 validation arrays)
 //       let errorMessage = 'Google sign-up failed';
-      
+
 //       if (err.message) {
 //         errorMessage = err.message;
 //       } else if (err.detail && Array.isArray(err.detail)) {
@@ -163,8 +180,13 @@
 //     }
 //   };
 
-//   const startCooldown = () => {
-//     setResendCooldown(30);
+//   // Cooldown matches the backend's 60-second resend limit
+//   const startCooldown = (seconds: number = 60) => {
+//     if (cooldownRef.current) {
+//       clearInterval(cooldownRef.current);
+//     }
+
+//     setResendCooldown(seconds);
 
 //     cooldownRef.current = setInterval(() => {
 //       setResendCooldown((prev) => {
@@ -184,11 +206,13 @@
 //   const handleEmailChange = (value: string) => {
 //     setEmail(value);
 
-//     if (otpVerified) {
+//     // Reset OTP state whenever the email changes after an OTP was sent/verified
+//     if (otpVerified || otpSent) {
 //       setOtpVerified(false);
 //       setOtpSent(false);
 //       setOtpCode('');
 //       setOtpMessage(null);
+//       setOtpError(null);
 //     }
 //   };
 
@@ -213,16 +237,22 @@
 //         }),
 //       });
 
-//       const data = await res.json();
+//       const data = await safeJson(res);
 
 //       if (!res.ok) {
-//         throw new Error(data.detail || 'Failed to send OTP');
+//         // Sync the timer with the server's "Please wait N seconds" message
+//         if (res.status === 429) {
+//           const match = /(\d+)\s*seconds/.exec(data.detail || '');
+//           if (match) startCooldown(Number(match[1]));
+//         }
+//         throw new Error(getErrorMessage(data, 'Failed to send OTP'));
 //       }
 
 //       setOtpSent(true);
 //       setOtpMessage('OTP sent! Check your email inbox.');
+//       setOtpCode('');
 
-//       startCooldown();
+//       startCooldown(60);
 //     } catch (err: any) {
 //       setOtpError(err.message || 'Failed to send OTP');
 //     } finally {
@@ -251,10 +281,14 @@
 //         }),
 //       });
 
-//       const data = await res.json();
+//       const data = await safeJson(res);
 
 //       if (!res.ok) {
-//         throw new Error(data.detail || 'Incorrect OTP');
+//         // After too many wrong attempts the backend locks this OTP, so clear the box
+//         if (res.status === 429) {
+//           setOtpCode('');
+//         }
+//         throw new Error(getErrorMessage(data, 'Incorrect OTP'));
 //       }
 
 //       setOtpVerified(true);
@@ -295,10 +329,10 @@
 //         }),
 //       });
 
-//       const data = await res.json();
+//       const data = await safeJson(res);
 
 //       if (!res.ok) {
-//         throw new Error(data.detail || 'Registration failed');
+//         throw new Error(getErrorMessage(data, 'Registration failed'));
 //       }
 
 //       login(data.token, data.user);
@@ -624,7 +658,7 @@
 //               className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
 //             />
 //             <span>
-//               I agree to receive marketing emails and updates fromFindMyJobs.{' '}
+//               I agree to receive marketing emails and updates from FindMyJobs.{' '}
 //               <span className="text-slate-400">(Optional)</span>
 //             </span>
 //           </label>
@@ -677,9 +711,20 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 import React, { useState, useEffect, useRef } from 'react';
 
 import { useAuth } from '../context/AuthContext.tsx';
+import { PasswordChecklist, getPasswordIssues } from '../components/PasswordChecklist.tsx';
 
 import {
   Lock,
@@ -987,6 +1032,12 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
       return;
     }
 
+    // Strong password rule (the server enforces it too)
+    if (getPasswordIssues(password).length > 0) {
+      setError('Password is too weak. Please meet all the password rules.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -1198,7 +1249,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
 
             <div className="mb-1">
               <label className="block text-xs font-semibold text-slate-700">
-                Password * (min 6 chars)
+                Password * (strong password required)
               </label>
             </div>
 
@@ -1207,10 +1258,11 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
                 id="register-password"
                 type={showPassword ? 'text' : 'password'}
                 required
-                minLength={6}
+                minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                autoComplete="new-password"
                 className="w-full px-3.5 py-2.5 pr-10 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
               />
 
@@ -1236,13 +1288,13 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
               </button>
             </div>
 
-            {password && (
-              <p className="text-[11px] text-slate-400 mt-1">
-                {showPassword
-                  ? 'Password visible — hide before sharing your screen.'
-                  : 'Click the eye icon to reveal your password.'}
-              </p>
-            )}
+            <PasswordChecklist
+              password={password}
+              onSuggest={(p) => {
+                setPassword(p);
+                setShowPassword(true);
+              }}
+            />
           </div>
 
           {/* Optional Fields */}

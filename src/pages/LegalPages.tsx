@@ -152,3 +152,12 @@ export const LegalPages: React.FC<LegalPageProps> = ({ type, navigate }) => {
     </div>
   );
 };
+
+
+
+
+
+
+
+
+

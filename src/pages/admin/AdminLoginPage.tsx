@@ -53,7 +53,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ navigate }) => {
         </div>
 
         {/* Demo Admin Credentials Helper */}
-        <div className="mb-6 p-3 bg-amber-400/10 border border-amber-400/30 rounded-xl text-xs text-amber-200 space-y-1">
+        {/* <div className="mb-6 p-3 bg-amber-400/10 border border-amber-400/30 rounded-xl text-xs text-amber-200 space-y-1">
           <div className="font-semibold text-amber-300">Default Admin Credentials:</div>
           <div className="flex justify-between text-[11px] text-slate-300">
             <span>Email: <strong>admin@paidjobs.com</strong></span>
@@ -69,7 +69,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ navigate }) => {
           >
             Auto-fill admin credentials
           </button>
-        </div>
+        </div> */}
 
         {error && (
           <div className="mb-4 p-3 bg-rose-900/40 border border-rose-500/50 rounded-xl text-xs text-rose-300 flex items-center gap-2">

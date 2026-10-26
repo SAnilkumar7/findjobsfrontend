@@ -1,3 +1,4 @@
+
 // import React, { useState, useEffect } from 'react';
 // import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 // import { PackagesProvider, usePackages } from './context/PackagesContext.tsx';
@@ -16,6 +17,7 @@
 // import { MyAccessPage } from './pages/MyAccessPage.tsx';
 // import { ProfilePage } from './pages/ProfilePage.tsx';
 // import { LegalPages } from './pages/LegalPages.tsx';
+// import { QueriesPage } from './pages/QueriesPage.tsx';
 
 
 
@@ -122,6 +124,11 @@
 //       return <ProfilePage navigate={navigate} />;
 //     }
 
+//     // 8b. Queries (Bug report / Feedback / Job queries)
+//     if (currentPath === '/queries') {
+//       return <QueriesPage navigate={navigate} />;
+//     }
+
 //     // 9. Legal Pages (Section 12)
 //     if (currentPath === '/terms') {
 //       return <LegalPages type="terms" navigate={navigate} />;
@@ -224,15 +231,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { PackagesProvider, usePackages } from './context/PackagesContext.tsx';
@@ -244,16 +242,15 @@ import { PaymentModal } from './components/PaymentModal.tsx';
 import { LandingPage } from './pages/LandingPage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
 import { RegisterPage } from './pages/RegisterPage.tsx';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage.tsx';
 import { DashboardPage } from './pages/DashboardPage.tsx';
 import { JobsCategoryPage } from './pages/JobsCategoryPage.tsx';
 import { JobDetailPage } from './pages/JobDetailPage.tsx';
 import { PricingPage } from './pages/PricingPage.tsx';
 import { MyAccessPage } from './pages/MyAccessPage.tsx';
 import { ProfilePage } from './pages/ProfilePage.tsx';
-import { LegalPages } from './pages/LegalPages.tsx';
+import * as LegalPagesModule from './pages/LegalPages.tsx';
 import { QueriesPage } from './pages/QueriesPage.tsx';
-
-
 
 // Admin Pages
 import { AdminLoginPage } from './pages/admin/AdminLoginPage.tsx';
@@ -264,6 +261,17 @@ import { AdminCategoriesPage } from './pages/admin/AdminCategoriesPage.tsx';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage.tsx';
 import { AdminPaymentsPage } from './pages/admin/AdminPaymentsPage.tsx';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage.tsx';
+
+// LegalPages.tsx may use a named export (export const LegalPages) or a default export.
+// This accepts both, so a missing named export can never blank the whole site.
+const LegalPages: React.ComponentType<any> =
+  (LegalPagesModule as any).LegalPages ??
+  (LegalPagesModule as any).default ??
+  (() => (
+    <div className="p-8 text-center text-sm text-slate-500">
+      This page is temporarily unavailable.
+    </div>
+  ));
 
 function MainRouter() {
   const [currentPath, setCurrentPath] = useState<string>(() => {
@@ -312,6 +320,9 @@ function MainRouter() {
     }
     if (currentPath === '/register') {
       return <RegisterPage navigate={navigate} />;
+    }
+    if (currentPath === '/forgot-password') {
+      return <ForgotPasswordPage navigate={navigate} />;
     }
 
     // 3. User Dashboard

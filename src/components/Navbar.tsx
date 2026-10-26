@@ -1,5 +1,4 @@
 
-
 // import React, { useState } from 'react';
 // import { useAuth } from '../context/AuthContext.tsx';
 // import { usePackages } from '../context/PackagesContext.tsx';
@@ -13,11 +12,8 @@
 //   Lock,
 //   ChevronDown,
 //   Sparkles,
-//   MessageSquare, // NEW
+//   MessageSquare,
 // } from 'lucide-react';
-
-// // NEW: paste your Google Form link here
-// const QUERIES_FORM_URL = 'https://forms.gle/YOUR_FORM_LINK';
 
 // interface NavbarProps {
 //   currentPath: string;
@@ -171,17 +167,18 @@
 //             Pricing
 //           </button>
 
-//           {/* NEW: Queries (opens Google Form in a new tab) */}
-//           <a
+//           {/* Queries — right after Pricing (opens the in-app Queries page) */}
+//           <button
 //             id="nav-link-queries"
-//             href={QUERIES_FORM_URL}
-//             target="_blank"
-//             rel="noopener noreferrer"
-//             className="px-3 py-2 rounded-lg transition-colors hover:text-slate-900 hover:bg-slate-100 flex items-center gap-1.5"
+//             onClick={() => handleNav('/queries')}
+//             className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 ${
+//               currentPath === '/queries'
+//                 ? 'bg-indigo-50 text-indigo-700 font-semibold'
+//                 : 'hover:text-slate-900 hover:bg-slate-100'
+//             }`}
 //           >
-//             <MessageSquare className="w-4 h-4 text-slate-400" />
 //             Queries
-//           </a>
+//           </button>
 
 //           {user && (
 //             <>
@@ -334,16 +331,15 @@
 //             Pricing
 //           </button>
 
-//           {/* NEW: Queries (opens Google Form in a new tab) */}
-//           <a
-//             href={QUERIES_FORM_URL}
-//             target="_blank"
-//             rel="noopener noreferrer"
-//             onClick={() => setMobileMenuOpen(false)}
-//             className="w-full text-left px-3 py-2 rounded-lg text-base font-medium text-slate-800 flex items-center gap-2"
+//           {/* Queries — right after Pricing (opens the in-app Queries page) */}
+//           <button
+//             onClick={() => handleNav('/queries')}
+//             className={`w-full text-left px-3 py-2 rounded-lg text-base font-medium flex items-center gap-2 ${
+//               currentPath === '/queries' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-800'
+//             }`}
 //           >
-//             <MessageSquare className="w-4 h-4 text-slate-400" /> Queries
-//           </a>
+//             Queries
+//           </button>
 
 //           {user ? (
 //             <>
@@ -355,6 +351,7 @@
 //               >
 //                 Dashboard
 //               </button>
+              
 //               <button
 //                 onClick={() => handleNav('/my-access')}
 //                 className={`w-full text-left px-3 py-2 rounded-lg text-base font-medium ${
@@ -416,20 +413,24 @@
 
 
 
+
+
+
+
+
+
+
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { usePackages } from '../context/PackagesContext.tsx';
 import {
-  Briefcase,
   ShieldCheck,
-  User as UserIcon,
   LogOut,
   Menu,
   X,
   Lock,
   ChevronDown,
   Sparkles,
-  MessageSquare,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -466,9 +467,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
           onClick={() => handleNav('/')}
           className="flex items-center gap-2.5 cursor-pointer select-none group"
         >
-          <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-200 transition-transform group-hover:scale-105">
-            <Briefcase className="w-5 h-5" />
-          </div>
+          <img
+            src="/logo.svg"
+            alt="FindMyJobs logo"
+            className="h-10 w-auto transition-transform group-hover:scale-105"
+          />
           <div className="flex flex-col">
             <span className="font-bold text-lg text-slate-900 tracking-tight leading-none">
               {siteTitle}
@@ -680,14 +683,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
 
         {/* Mobile menu button */}
         <div className="flex md:hidden items-center gap-2">
-          {admin && (
-            <button
-              onClick={() => handleNav('/admin/dashboard')}
-              className="p-1.5 text-xs bg-amber-100 text-amber-800 rounded-md border border-amber-300"
-            >
-              <ShieldCheck className="w-4 h-4" />
-            </button>
-          )}
           <button
             id="nav-mobile-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -768,7 +763,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
               >
                 Dashboard
               </button>
-              
+
               <button
                 onClick={() => handleNav('/my-access')}
                 className={`w-full text-left px-3 py-2 rounded-lg text-base font-medium ${
@@ -808,16 +803,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
               </button>
             </div>
           )}
-
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Admin Portal</span>
-            <button
-              onClick={() => handleNav(admin ? '/admin/dashboard' : '/admin/login')}
-              className="text-indigo-600 font-medium hover:underline"
-            >
-              {admin ? 'Go to Admin Dashboard' : 'Admin Login'}
-            </button>
-          </div>
         </div>
       )}
     </header>
