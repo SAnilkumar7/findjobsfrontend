@@ -6,6 +6,7 @@
 //   Mail,
 //   ArrowRight,
 //   AlertCircle,
+//   CheckCircle2,
 //   Loader2,
 //   Eye,
 //   EyeOff,
@@ -31,6 +32,16 @@
 //   const [loading, setLoading] = useState(false);
 //   const [error, setError] = useState<string | null>(null);
 //   const [showPassword, setShowPassword] = useState(false);
+
+//   // Shown after a successful password reset
+//   const [resetSuccess, setResetSuccess] = useState(false);
+
+//   useEffect(() => {
+//     if (sessionStorage.getItem('passwordResetSuccess')) {
+//       sessionStorage.removeItem('passwordResetSuccess');
+//       setResetSuccess(true);
+//     }
+//   }, []);
 
 //   // Google Sign-In
 //   const googleBtnRef = useRef<HTMLDivElement>(null);
@@ -105,6 +116,7 @@
 //     setShowPassword(false);
 //     setLoading(true);
 //     setError(null);
+//     setResetSuccess(false);
 
 //     try {
 //       const res = await fetch('/api/auth/login', {
@@ -136,14 +148,14 @@
 //     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-slate-50">
 //       <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 p-8 shadow-xs">
 //         <div className="text-center mb-8">
-//           <h1 className="text-2xl font-bold text-slate-900">Welcome Back</h1>
+//           <h1 className="text-2xl font-bold text-slate-900">It's Wonderful to Have You Here!</h1>
 //           <p className="text-xs text-slate-500 mt-1">
 //             Sign in to view your unlocked job categories
 //           </p>
 //         </div>
 
-//         {/* Demo Credentials Helper */}
-//         <div className="mb-6 p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-xs text-indigo-900 space-y-1">
+//         {/* ===== Demo credentials helper: DELETE THIS WHOLE BLOCK BEFORE PUBLIC LAUNCH ===== */}
+//         {/* <div className="mb-6 p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-xs text-indigo-900 space-y-1">
 //           <div className="font-semibold">Quick Demo Account:</div>
 
 //           <div className="flex justify-between text-[11px] text-slate-600">
@@ -166,7 +178,15 @@
 //           >
 //             Auto-fill demo credentials
 //           </button>
-//         </div>
+//         </div> */}
+//         {/* ===== end of demo block ===== */}
+
+//         {resetSuccess && (
+//           <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-700 flex items-center gap-2">
+//             <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+//             <span>Password updated. Sign in with your new password.</span>
+//           </div>
+//         )}
 
 //         {error && (
 //           <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
@@ -200,6 +220,14 @@
 //               <label className="block text-xs font-semibold text-slate-700">
 //                 Password
 //               </label>
+//               <button
+//                 id="login-forgot-password"
+//                 type="button"
+//                 onClick={() => navigate('/forgot-password')}
+//                 className="text-xs text-indigo-600 font-semibold hover:underline"
+//               >
+//                 Forgot password?
+//               </button>
 //             </div>
 
 //             <div className="relative">
@@ -308,6 +336,11 @@
 
 
 
+
+
+
+
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
 import {
@@ -351,11 +384,37 @@ export const LoginPage: React.FC<LoginPageProps> = ({ navigate }) => {
     }
   }, []);
 
+  // Mandatory consent for Google sign-in: Terms & Conditions + Privacy Policy (DPDP Act, 2023)
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  // The Google callback is registered once, so it reads consent from a ref
+  const termsAcceptedRef = useRef(false);
+  const consentBoxRef = useRef<HTMLDivElement>(null);
+  const [consentError, setConsentError] = useState(false);
+
+  // Called whenever someone tries Google sign-in without ticking the box:
+  // scrolls to the consent checkbox and highlights it
+  const flagConsentMissing = () => {
+    setConsentError(true);
+    consentBoxRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  // Keep the consent ref in sync with the checkbox
+  useEffect(() => {
+    termsAcceptedRef.current = termsAccepted;
+  }, [termsAccepted]);
+
   // Google Sign-In
   const googleBtnRef = useRef<HTMLDivElement>(null);
+  const googleWrapRef = useRef<HTMLDivElement>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleGoogleCredential = async (response: { credential: string }) => {
+    // Consent must be given before Google sign-in continues
+    if (!termsAcceptedRef.current) {
+      flagConsentMissing();
+      return;
+    }
+
     setGoogleLoading(true);
     setError(null);
 
@@ -363,7 +422,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ navigate }) => {
       const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential: response.credential }),
+        body: JSON.stringify({
+          credential: response.credential,
+          terms_accepted: true,
+        }),
       });
 
       const data = await res.json();
@@ -397,17 +459,42 @@ export const LoginPage: React.FC<LoginPageProps> = ({ navigate }) => {
         callback: handleGoogleCredential,
       });
 
+      // Fit the Google button inside the card on every screen size.
+      // Google only accepts widths between 200 and 400 px, so measure the
+      // real width of the wrapper and clamp it.
+      const containerWidth =
+        googleWrapRef.current?.getBoundingClientRect().width ||
+        googleBtnRef.current.parentElement?.getBoundingClientRect().width ||
+        280;
+      const buttonWidth = Math.max(200, Math.min(400, Math.floor(containerWidth)));
+
+      // Clear any previous render so the logo + text are redrawn at the new width
+      googleBtnRef.current.innerHTML = '';
+
       window.google.accounts.id.renderButton(googleBtnRef.current, {
         theme: 'outline',
         size: 'large',
-        width: 320, // must be a number (pixels), not '100%'
+        width: buttonWidth, // must be a number (pixels), not '100%'
         text: 'continue_with',
       });
     };
 
+    // Re-fit the button when the screen is resized / rotated
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+    const onResize = () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(renderButton, 200);
+    };
+    window.addEventListener('resize', onResize);
+
+    const cleanup = () => {
+      window.removeEventListener('resize', onResize);
+      if (resizeTimer) clearTimeout(resizeTimer);
+    };
+
     if (document.getElementById(scriptId)) {
       renderButton();
-      return;
+      return cleanup;
     }
 
     const script = document.createElement('script');
@@ -417,6 +504,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ navigate }) => {
     script.defer = true;
     script.onload = renderButton;
     document.body.appendChild(script);
+
+    return cleanup;
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -461,33 +550,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ navigate }) => {
             Sign in to view your unlocked job categories
           </p>
         </div>
-
-        {/* ===== Demo credentials helper: DELETE THIS WHOLE BLOCK BEFORE PUBLIC LAUNCH ===== */}
-        {/* <div className="mb-6 p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-xs text-indigo-900 space-y-1">
-          <div className="font-semibold">Quick Demo Account:</div>
-
-          <div className="flex justify-between text-[11px] text-slate-600">
-            <span>
-              Email: <strong>jobseeker@example.com</strong>
-            </span>
-            <span>
-              Password: <strong>user123</strong>
-            </span>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              setEmail('jobseeker@example.com');
-              setPassword('user123');
-              setShowPassword(false);
-            }}
-            className="text-[11px] text-indigo-600 underline font-medium cursor-pointer"
-          >
-            Auto-fill demo credentials
-          </button>
-        </div> */}
-        {/* ===== end of demo block ===== */}
 
         {resetSuccess && (
           <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-700 flex items-center gap-2">
@@ -610,8 +672,90 @@ export const LoginPage: React.FC<LoginPageProps> = ({ navigate }) => {
                 Signing in with Google...
               </div>
             ) : (
-              <div ref={googleBtnRef} className="flex justify-center" />
+              <div
+                ref={googleWrapRef}
+                className="relative w-full max-w-full min-h-[44px] rounded-xl"
+              >
+                {/* pointer-events-none: the Google iframe cannot receive taps/clicks until consent is ticked.
+                    The Google logo + text stay fully visible so users can see it is Google sign-in */}
+                <div
+                  ref={googleBtnRef}
+                  className={`flex justify-center w-full max-w-full ${
+                    !termsAccepted ? 'pointer-events-none select-none' : ''
+                  }`}
+                  aria-hidden={!termsAccepted}
+                />
+
+                {/* Blocks the Google button until Terms & Privacy are accepted (works on touch screens too) */}
+                {!termsAccepted && (
+                  <button
+                    type="button"
+                    onClick={flagConsentMissing}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      flagConsentMissing();
+                    }}
+                    aria-label="Tick the Terms and Privacy Policy box to continue with Google"
+                    style={{ touchAction: 'none' }}
+                    className="absolute inset-0 z-50 w-full h-full cursor-not-allowed bg-white/20 rounded-xl"
+                  />
+                )}
+              </div>
             )}
+
+            {/* Terms & Privacy consent: required before Google sign-in (DPDP Act, 2023) */}
+            <div
+              ref={consentBoxRef}
+              className={`mt-4 p-3 rounded-xl border transition-colors ${
+                consentError && !termsAccepted
+                  ? 'border-rose-300 bg-rose-50'
+                  : 'border-slate-200 bg-slate-50'
+              }`}
+            >
+              <label className="flex items-start gap-2.5 text-xs text-slate-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="login-terms-consent"
+                  checked={termsAccepted}
+                  onChange={(e) => {
+                    setTermsAccepted(e.target.checked);
+                    if (e.target.checked) setConsentError(false);
+                  }}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="leading-relaxed">
+                  I am 18 years or older and I agree to the{' '}
+                  <a
+                    href="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-600 font-semibold hover:underline"
+                  >
+                    Terms &amp; Conditions
+                  </a>{' '}
+                  and{' '}
+                  <a
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-600 font-semibold hover:underline"
+                  >
+                    Privacy Policy
+                  </a>
+                  , and consent to FindMyJobs processing my personal data to create my
+                  account and provide job access.{' '}
+                  <span className="text-rose-500">*</span>
+                </span>
+              </label>
+
+              {consentError && !termsAccepted && (
+                <p className="text-[11px] text-rose-600 mt-1.5 pl-[26px] flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 shrink-0" />
+                  Please tick this box to continue with Google.
+                </p>
+              )}
+            </div>
           </>
         )}
 

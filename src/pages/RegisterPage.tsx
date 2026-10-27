@@ -730,10 +730,6 @@
 
 
 
-
-
-
-
 import React, { useState, useEffect, useRef } from 'react';
 
 import { useAuth } from '../context/AuthContext.tsx';
@@ -818,6 +814,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
 
   // Google Sign-In
   const googleBtnRef = useRef<HTMLDivElement>(null);
+  const googleWrapRef = useRef<HTMLDivElement>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   // OTP state (email)
@@ -866,17 +863,42 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
         (window as any).__gsiInitialized = true;
       }
 
+      // Fit the Google button inside the card on every screen size.
+      // Google only accepts widths between 200 and 400 px, so measure the
+      // real width of the wrapper and clamp it (a fixed 320 overflowed the card on mobile).
+      const containerWidth =
+        googleWrapRef.current?.getBoundingClientRect().width ||
+        googleBtnRef.current.parentElement?.getBoundingClientRect().width ||
+        280;
+      const buttonWidth = Math.max(200, Math.min(400, Math.floor(containerWidth)));
+
+      // Clear any previous render so the logo + text are redrawn at the new width
+      googleBtnRef.current.innerHTML = '';
+
       window.google.accounts.id.renderButton(googleBtnRef.current, {
         theme: 'outline',
         size: 'large',
-        width: '320',
+        width: String(buttonWidth),
         text: 'signup_with',
       });
     };
 
+    // Re-fit the button when the screen is resized / rotated
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+    const onResize = () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(renderButton, 200);
+    };
+    window.addEventListener('resize', onResize);
+
+    const cleanup = () => {
+      window.removeEventListener('resize', onResize);
+      if (resizeTimer) clearTimeout(resizeTimer);
+    };
+
     if (document.getElementById(scriptId)) {
       renderButton();
-      return;
+      return cleanup;
     }
 
     const script = document.createElement('script');
@@ -888,6 +910,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
     script.onload = renderButton;
 
     document.body.appendChild(script);
+
+    return cleanup;
   }, []);
 
   const handleGoogleCredential = async (response: {
@@ -1150,16 +1174,33 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
                 Signing up with Google...
               </div>
             ) : (
-              <div className="relative">
-                <div ref={googleBtnRef} className="flex justify-center" />
+              <div
+                ref={googleWrapRef}
+                className="relative w-full max-w-full min-h-[44px] rounded-xl"
+              >
+                {/* pointer-events-none: the Google iframe cannot receive taps/clicks until consent is ticked.
+                    The Google logo + text stay fully visible so users can see it is Google sign-up */}
+                <div
+                  ref={googleBtnRef}
+                  className={`flex justify-center w-full max-w-full ${
+                    !termsAccepted ? 'pointer-events-none select-none' : ''
+                  }`}
+                  aria-hidden={!termsAccepted}
+                />
 
-                {/* Blocks the Google button until Terms & Privacy are accepted */}
+                {/* Blocks the Google button until Terms & Privacy are accepted (works on touch screens too) */}
                 {!termsAccepted && (
                   <button
                     type="button"
                     onClick={flagConsentMissing}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      flagConsentMissing();
+                    }}
                     aria-label="Tick the Terms and Privacy Policy box to sign up with Google"
-                    className="absolute inset-0 z-10 cursor-not-allowed bg-white/60 rounded-xl"
+                    style={{ touchAction: 'none' }}
+                    className="absolute inset-0 z-50 w-full h-full cursor-not-allowed bg-white/20 rounded-xl"
                   />
                 )}
               </div>
