@@ -87,12 +87,30 @@ export const LegalPages: React.FC<LegalPageProps> = ({ type, navigate }) => {
               </p>
             </section>
 
-            <section className="space-y-2">
+            {/* <section className="space-y-2">
               <h2 className="text-base font-bold text-slate-900">2. Failed or Duplicate Deductions</h2>
               <p>
                 If your account was debited more than once for the same order due to a network timeout, or if payment succeeded but access was not provisioned within 2 hours, please contact our support team with your Razorpay Payment ID. Verified duplicate charges will be refunded to the original payment source within 5–7 business days.
               </p>
+            </section> */}
+
+            <section className="space-y-2">
+              <h2 className="text-base font-bold text-slate-900">2. Failed or Duplicate Deductions</h2>
+              <p>
+                If your account was debited more than once for the same order due to a network timeout, or if payment succeeded but access was not provisioned within 2 hours, please contact our support team at{' '}
+                <a
+                  href="mailto:support@findmyjobs.in"
+                  className="text-indigo-600 font-semibold hover:underline"
+                >
+                  support@findmyjobs.in
+                </a>{' '}
+                with your Razorpay Payment ID. Verified duplicate charges will be refunded to the original payment source within 5–7 business days.
+              </p>
             </section>
+
+
+
+
           </div>
         );
 

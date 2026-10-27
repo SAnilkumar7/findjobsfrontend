@@ -1,7 +1,9 @@
 
+
 // import React, { useState, useEffect, useRef } from 'react';
 
 // import { useAuth } from '../context/AuthContext.tsx';
+// import { PasswordChecklist, getPasswordIssues } from '../components/PasswordChecklist.tsx';
 
 // import {
 //   Lock,
@@ -309,6 +311,12 @@
 //       return;
 //     }
 
+//     // Strong password rule (the server enforces it too)
+//     if (getPasswordIssues(password).length > 0) {
+//       setError('Password is too weak. Please meet all the password rules.');
+//       return;
+//     }
+
 //     setLoading(true);
 //     setError(null);
 
@@ -520,7 +528,7 @@
 
 //             <div className="mb-1">
 //               <label className="block text-xs font-semibold text-slate-700">
-//                 Password * (min 6 chars)
+//                 Password * (strong password required)
 //               </label>
 //             </div>
 
@@ -529,10 +537,11 @@
 //                 id="register-password"
 //                 type={showPassword ? 'text' : 'password'}
 //                 required
-//                 minLength={6}
+//                 minLength={8}
 //                 value={password}
 //                 onChange={(e) => setPassword(e.target.value)}
 //                 placeholder="••••••••"
+//                 autoComplete="new-password"
 //                 className="w-full px-3.5 py-2.5 pr-10 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
 //               />
 
@@ -558,13 +567,13 @@
 //               </button>
 //             </div>
 
-//             {password && (
-//               <p className="text-[11px] text-slate-400 mt-1">
-//                 {showPassword
-//                   ? 'Password visible — hide before sharing your screen.'
-//                   : 'Click the eye icon to reveal your password.'}
-//               </p>
-//             )}
+//             <PasswordChecklist
+//               password={password}
+//               onSuggest={(p) => {
+//                 setPassword(p);
+//                 setShowPassword(true);
+//               }}
+//             />
 //           </div>
 
 //           {/* Optional Fields */}
@@ -721,6 +730,10 @@
 
 
 
+
+
+
+
 import React, { useState, useEffect, useRef } from 'react';
 
 import { useAuth } from '../context/AuthContext.tsx';
@@ -783,6 +796,20 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
   const [location, setLocation] = useState('');
   const [marketingOptIn, setMarketingOptIn] = useState(false);
 
+  // Mandatory consent: Terms & Conditions + Privacy Policy (DPDP Act, 2023)
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  // The Google callback is registered once, so it reads consent from a ref
+  const termsAcceptedRef = useRef(false);
+  const consentBoxRef = useRef<HTMLDivElement>(null);
+  const [consentError, setConsentError] = useState(false);
+
+  // Called whenever someone tries to sign up (Google or email) without ticking the box:
+  // scrolls to the consent checkbox and highlights it
+  const flagConsentMissing = () => {
+    setConsentError(true);
+    consentBoxRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -816,6 +843,11 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
       }
     };
   }, []);
+
+  // Keep the consent ref in sync with the checkbox
+  useEffect(() => {
+    termsAcceptedRef.current = termsAccepted;
+  }, [termsAccepted]);
 
   // Load Google's Identity Services script and render the button
   useEffect(() => {
@@ -861,6 +893,12 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
   const handleGoogleCredential = async (response: {
     credential: string;
   }) => {
+    // Consent must be given before any account is created
+    if (!termsAcceptedRef.current) {
+      flagConsentMissing();
+      return;
+    }
+
     setGoogleLoading(true);
     setError(null);
 
@@ -872,6 +910,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
         },
         body: JSON.stringify({
           credential: response.credential,
+          terms_accepted: true,
         }),
       });
 
@@ -1027,6 +1066,11 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!termsAccepted) {
+      flagConsentMissing();
+      return;
+    }
+
     if (!otpVerified) {
       setError('Please verify your email with the OTP before continuing');
       return;
@@ -1055,6 +1099,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
           phone: phone || undefined,
           age: age ? Number(age) : undefined,
           location: location || undefined,
+          terms_accepted: true,
+          marketing_opt_in: marketingOptIn,
         }),
       });
 
@@ -1104,7 +1150,19 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
                 Signing up with Google...
               </div>
             ) : (
-              <div ref={googleBtnRef} className="flex justify-center" />
+              <div className="relative">
+                <div ref={googleBtnRef} className="flex justify-center" />
+
+                {/* Blocks the Google button until Terms & Privacy are accepted */}
+                {!termsAccepted && (
+                  <button
+                    type="button"
+                    onClick={flagConsentMissing}
+                    aria-label="Tick the Terms and Privacy Policy box to sign up with Google"
+                    className="absolute inset-0 z-10 cursor-not-allowed bg-white/60 rounded-xl"
+                  />
+                )}
+              </div>
             )}
 
             <div className="flex items-center gap-3 my-5">
@@ -1378,7 +1436,62 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
             </div>
           </div>
 
-          {/* Marketing opt-in (optional, unchecked by default) */}
+          {/* Terms & Privacy consent: required for BOTH Google and email sign-up (DPDP Act, 2023) */}
+          <div
+            ref={consentBoxRef}
+            className={`p-3 rounded-xl border transition-colors ${
+              consentError && !termsAccepted
+                ? 'border-rose-300 bg-rose-50'
+                : 'border-slate-200 bg-slate-50'
+            }`}
+          >
+            <label className="flex items-start gap-2.5 text-xs text-slate-700 cursor-pointer">
+              <input
+                type="checkbox"
+                id="register-terms-consent"
+                checked={termsAccepted}
+                onChange={(e) => {
+                  setTermsAccepted(e.target.checked);
+                  if (e.target.checked) setConsentError(false);
+                }}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="leading-relaxed">
+                I am 18 years or older and I agree to the{' '}
+                <a
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-indigo-600 font-semibold hover:underline"
+                >
+                  Terms &amp; Conditions
+                </a>{' '}
+                and{' '}
+                <a
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-indigo-600 font-semibold hover:underline"
+                >
+                  Privacy Policy
+                </a>
+                , and consent to FindMyJobs processing my personal data to create my
+                account and provide job access.{' '}
+                <span className="text-rose-500">*</span>
+              </span>
+            </label>
+
+            {consentError && !termsAccepted && (
+              <p className="text-[11px] text-rose-600 mt-1.5 pl-[26px] flex items-center gap-1">
+                <AlertCircle className="w-3 h-3 shrink-0" />
+                Please tick this box to continue with Google or email sign-up.
+              </p>
+            )}
+
+            
+          </div>
+
+          {/* Marketing opt-in (optional, unchecked by default, separate from required consent) */}
           <label className="flex items-start gap-2.5 text-xs text-slate-600 cursor-pointer">
             <input
               type="checkbox"
@@ -1407,6 +1520,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
               </>
             ) : !otpVerified ? (
               <span>Verify Email to Continue</span>
+            ) : !termsAccepted ? (
+              <span>Accept Terms to Continue</span>
             ) : (
               <>
                 <span>Sign Up & Continue</span>
