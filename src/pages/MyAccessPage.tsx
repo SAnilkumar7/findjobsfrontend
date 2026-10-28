@@ -34,7 +34,7 @@ export const MyAccessPage: React.FC<MyAccessPageProps> = ({ navigate, onOpenChec
       icon: <Code className="w-5 h-5 text-blue-600" />,
       desc: 'Software Engineering, DevOps, Cloud, AI/ML, and Data Analytics.',
       isActive: Boolean(access?.has_it),
-      pkg: getPackageBySlug('it') || { price: 49 },
+      pkg: getPackageBySlug('it') || { price: 79 },
     },
     {
       id: 'non-it',
@@ -42,7 +42,7 @@ export const MyAccessPage: React.FC<MyAccessPageProps> = ({ navigate, onOpenChec
       icon: <Briefcase className="w-5 h-5 text-amber-600" />,
       desc: 'Operations, Human Resources, Supply Chain, and Digital Marketing.',
       isActive: Boolean(access?.has_non_it),
-      pkg: getPackageBySlug('non-it') || { price: 39 },
+      pkg: getPackageBySlug('non-it') || { price: 69 },
     },
     {
       id: 'banking',
@@ -50,7 +50,7 @@ export const MyAccessPage: React.FC<MyAccessPageProps> = ({ navigate, onOpenChec
       icon: <Landmark className="w-5 h-5 text-emerald-600" />,
       desc: 'Commercial Banking, Wealth Management, Risk Analysis, and FinTech.',
       isActive: Boolean(access?.has_banking),
-      pkg: getPackageBySlug('banking') || { price: 49 },
+      pkg: getPackageBySlug('banking') || { price: 59 },
     },
   ];
 

@@ -22,9 +22,9 @@ export const PricingPage: React.FC<PricingPageProps> = ({ navigate, onOpenChecko
   const { user, access } = useAuth();
   const { packages, formatPrice, getPackageBySlug } = usePackages();
 
-  const itPkg = getPackageBySlug('it') || { price: 49, name: 'IT Jobs' };
-  const nonItPkg = getPackageBySlug('non-it') || { price: 39, name: 'Non-IT Jobs' };
-  const bankingPkg = getPackageBySlug('banking') || { price: 49, name: 'Banking Jobs' };
+  const itPkg = getPackageBySlug('it') || { price: 79, name: 'IT Jobs' };
+  const nonItPkg = getPackageBySlug('non-it') || { price: 69, name: 'Non-IT Jobs' };
+  const bankingPkg = getPackageBySlug('banking') || { price: 59, name: 'Banking Jobs' };
   const allPkg = getPackageBySlug('all') || { price: 99, name: 'All Access' };
 
   return (

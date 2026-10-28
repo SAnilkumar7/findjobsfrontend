@@ -71,6 +71,19 @@ export const LegalPages: React.FC<LegalPageProps> = ({ type, navigate }) => {
                 Your personal details are used strictly to maintain your account, authenticate login sessions, and track your purchased access rights. We do not sell your personal information to third-party advertisers.
               </p>
             </section>
+            <section className="space-y-2">
+              <h2 className="text-base font-bold text-slate-900">4. Account Deletion</h2>
+              <p>
+                You can request complete deletion of your account and personal data at any time. To do so, please contact our team by emailing us at{' '}
+                <a
+                  href="mailto:support@findmyjobs.in"
+                  className="text-indigo-600 font-semibold hover:underline"
+                >
+                  support@findmyjobs.in
+                </a>
+                . Once your request is verified, we will permanently delete your account and protect your privacy throughout the process.
+              </p>
+            </section>
           </div>
         );
 

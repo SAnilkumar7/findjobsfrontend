@@ -28,9 +28,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ navigate, onOpenCh
     refreshAccess();
   }, [refreshAccess]);
 
-  const itPkg = getPackageBySlug('it') || { id: 'pkg_it', slug: 'it', price: 49, name: 'IT Jobs' };
-  const nonItPkg = getPackageBySlug('non-it') || { id: 'pkg_non_it', slug: 'non-it', price: 39, name: 'Non-IT Jobs' };
-  const bankingPkg = getPackageBySlug('banking') || { id: 'pkg_banking', slug: 'banking', price: 49, name: 'Banking Jobs' };
+  const itPkg = getPackageBySlug('it') || { id: 'pkg_it', slug: 'it', price: 79, name: 'IT Jobs' };
+  const nonItPkg = getPackageBySlug('non-it') || { id: 'pkg_non_it', slug: 'non-it', price: 69, name: 'Non-IT Jobs' };
+  const bankingPkg = getPackageBySlug('banking') || { id: 'pkg_banking', slug: 'banking', price: 59, name: 'Banking Jobs' };
   const allPkg = getPackageBySlug('all') || { id: 'pkg_all', slug: 'all', price: 99, name: 'All Access' };
 
   return (

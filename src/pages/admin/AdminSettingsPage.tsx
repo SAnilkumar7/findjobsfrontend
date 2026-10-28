@@ -36,9 +36,9 @@ export const AdminSettingsPage: React.FC<AdminSettingsPageProps> = ({ navigate }
   const [currencySymbol, setCurrencySymbol] = useState('₹');
 
   // The 4 prices (Section 8)
-  const [itPrice, setItPrice] = useState(49);
-  const [nonItPrice, setNonItPrice] = useState(39);
-  const [bankingPrice, setBankingPrice] = useState(49);
+  const [itPrice, setItPrice] = useState(79);
+  const [nonItPrice, setNonItPrice] = useState(69);
+  const [bankingPrice, setBankingPrice] = useState(59);
   const [allPrice, setAllPrice] = useState(99);
 
   useEffect(() => {

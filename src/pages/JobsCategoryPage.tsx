@@ -40,6 +40,11 @@
 //    while a fresh copy is fetched quietly in the background. */
 // const jobsCache = new Map<string, Job[]>();
 
+// /* MOBILE: on phones, un-truncate card text (company name, city, etc.)
+//    so full names are visible and wrap onto the next line. */
+// const MOBILE_CARD_FIX =
+//   'max-sm:[&_.truncate]:whitespace-normal max-sm:[&_.truncate]:overflow-visible max-sm:[&_.truncate]:text-clip max-sm:[&_.truncate]:break-words';
+
 // /* Placeholder card shown while jobs load (instead of a blank spinner screen) */
 // const JobCardSkeleton: React.FC = () => (
 //   <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 animate-pulse">
@@ -76,7 +81,7 @@
 //     id: `pkg_${categorySlug}`,
 //     slug: categorySlug,
 //     name: `${categorySlug.toUpperCase()} Jobs`,
-//     price: categorySlug === 'non-it' ? 39 : 49,
+//     price: categorySlug === 'non-it' ? 69 : 79,
 //     description: 'Instant access to curated jobs and external application links.',
 //   };
 
@@ -208,16 +213,17 @@
 //   );
 
 //   return (
-//     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+//     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 overflow-x-hidden">
 //       {/* Category Header */}
 //       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-200">
-//         <div className="flex items-center gap-3">
-//           <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center border border-slate-200 shadow-xs">
+//         <div className="flex items-center gap-3 min-w-0">
+//           <div className="w-12 h-12 shrink-0 rounded-2xl bg-slate-100 flex items-center justify-center border border-slate-200 shadow-xs">
 //             {getCategoryIcon()}
 //           </div>
-//           <div>
-//             <div className="flex items-center gap-2">
-//               <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+//           <div className="min-w-0">
+//             {/* MOBILE: flex-wrap so the badge drops below the title on small screens */}
+//             <div className="flex flex-wrap items-center gap-2">
+//               <h1 className="text-xl sm:text-3xl font-bold text-slate-900 leading-tight">
 //                 {getCategoryTitle()}
 //               </h1>
 //               {!isLocked && !loading && !error && (
@@ -256,7 +262,7 @@
 //       </div>
 
 //       {isLocked ? (
-//         <div className="max-w-xl mx-auto bg-white rounded-3xl border border-slate-200 shadow-lg p-8 text-center space-y-5 my-8">
+//         <div className="max-w-xl mx-auto bg-white rounded-3xl border border-slate-200 shadow-lg p-6 sm:p-8 text-center space-y-5 my-8">
 //           <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto shadow-xs">
 //             <Lock className="w-8 h-8" />
 //           </div>
@@ -265,7 +271,7 @@
 //             <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
 //               Protected Access
 //             </span>
-//             <h2 className="text-2xl font-bold text-slate-900 mt-1">
+//             <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
 //               {getCategoryTitle()} are Locked
 //             </h2>
 //             <p className="text-sm text-slate-600 mt-2 leading-relaxed">
@@ -306,9 +312,9 @@
 
 //             <button
 //               onClick={() => onOpenCheckout('all')}
-//               className="w-full py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5"
+//               className="w-full py-2.5 px-3 bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5"
 //             >
-//               <Sparkles className="w-3.5 h-3.5" />
+//               <Sparkles className="w-3.5 h-3.5 shrink-0" />
 //               <span>Or Get All Access Bundle (IT + Non-IT + Banking) for ₹99</span>
 //             </button>
 //           </div>
@@ -320,7 +326,8 @@
 //             <div className="h-9 w-full sm:w-80 bg-slate-100 rounded-xl" />
 //           </div>
 //           {/* Placeholder cards */}
-//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+//           {/* MOBILE: 1 column on phones, 2 from sm, 3 from lg */}
+//           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
 //             {[0, 1, 2, 3, 4, 5].map((i) => (
 //               <JobCardSkeleton key={i} />
 //             ))}
@@ -341,21 +348,22 @@
 //       ) : (
 //         <div className="space-y-6">
 //           {/* Controls Bar */}
-//           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
+//           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
 //             <div className="relative w-full sm:w-80">
-//               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+//               {/* MOBILE: icon vertically centered */}
+//               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
 //               <input
 //                 type="text"
 //                 value={searchQuery}
 //                 maxLength={100}
 //                 onChange={(e) => setSearchQuery(e.target.value)}
 //                 placeholder="Search title, company, city, skill..."
-//                 className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
+//                 className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
 //               />
 //             </div>
 
 //             <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-//               <span className="text-xs text-slate-500 flex items-center gap-1">
+//               <span className="text-xs text-slate-500 flex items-center gap-1 shrink-0">
 //                 <SlidersHorizontal className="w-3.5 h-3.5" /> Sort:
 //               </span>
 //               <select
@@ -363,13 +371,13 @@
 //                 onChange={(e) =>
 //                   setSortBy(e.target.value as 'latest' | 'oldest' | 'deadline')
 //                 }
-//                 className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+//                 className="flex-1 sm:flex-none min-w-0 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
 //               >
 //                 <option value="latest">Latest Posted</option>
 //                 <option value="oldest">Oldest First</option>
 //                 <option value="deadline">Application Deadline</option>
 //               </select>
-//               <div className="text-xs font-semibold text-slate-400 px-1">
+//               <div className="text-xs font-semibold text-slate-400 px-1 whitespace-nowrap shrink-0">
 //                 {filteredJobs.length} {filteredJobs.length === 1 ? 'Job' : 'Jobs'}
 //               </div>
 //             </div>
@@ -394,14 +402,19 @@
 //             </div>
 //           ) : (
 //             <>
-//               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+//               {/* MOBILE: 1 column on phones, 2 from sm, 3 from lg */}
+//               <div
+//                 className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 ${MOBILE_CARD_FIX}`}
+//               >
 //                 {visibleJobs.map((job) => (
-//                   <CardBoundary key={job.id}>
-//                     <JobCard
-//                       job={job}
-//                       onClick={() => navigate(`/jobs/view/${job.id}`)}
-//                     />
-//                   </CardBoundary>
+//                   <div key={job.id} className="min-w-0">
+//                     <CardBoundary>
+//                       <JobCard
+//                         job={job}
+//                         onClick={() => navigate(`/jobs/view/${job.id}`)}
+//                       />
+//                     </CardBoundary>
+//                   </div>
 //                 ))}
 //               </div>
 
@@ -422,8 +435,6 @@
 //     </div>
 //   );
 // };
-
-
 
 
 
@@ -473,6 +484,14 @@ interface JobsCategoryPageProps {
 
 const PAGE_SIZE = 18;
 
+/* Fallback prices per category (used only if the package isn't found) */
+const FALLBACK_PRICES: Record<string, number> = {
+  it: 79,
+  'non-it': 69,
+  banking: 59,
+  all: 99,
+};
+
 /* In-memory cache: coming back to a category shows jobs instantly,
    while a fresh copy is fetched quietly in the background. */
 const jobsCache = new Map<string, Job[]>();
@@ -518,7 +537,7 @@ export const JobsCategoryPage: React.FC<JobsCategoryPageProps> = ({
     id: `pkg_${categorySlug}`,
     slug: categorySlug,
     name: `${categorySlug.toUpperCase()} Jobs`,
-    price: categorySlug === 'non-it' ? 39 : 49,
+    price: FALLBACK_PRICES[categorySlug] ?? 79,
     description: 'Instant access to curated jobs and external application links.',
   };
 
