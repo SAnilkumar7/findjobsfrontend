@@ -1,0 +1,16 @@
+# FindMyJobs
+
+> FindMyJobs lists verified IT, Non-IT and Banking jobs in India with full details and direct application links or contact numbers. Access is a one-time payment per category.
+
+## Main pages
+- [Home](https://findmyjobs.in/): Overview of the platform
+- [Pricing](https://findmyjobs.in/pricing): Category access plans
+- [IT Jobs](https://findmyjobs.in/jobs/it): IT job listings
+- [Non-IT Jobs](https://findmyjobs.in/jobs/non-it): Non-IT job listings
+- [Banking Jobs](https://findmyjobs.in/jobs/banking): Banking job listings
+- [About](https://findmyjobs.in/about): Who we are
+
+## Policies
+- [Terms](https://findmyjobs.in/terms)
+- [Privacy](https://findmyjobs.in/privacy)
+- [Refund policy](https://findmyjobs.in/refund)
