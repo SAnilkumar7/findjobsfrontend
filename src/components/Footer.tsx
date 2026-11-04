@@ -276,44 +276,41 @@ const XIcon: React.FC<{ className?: string }> = ({ className }) => (
 const SOCIAL_LINKS = [
   {
     name: 'Instagram',
-    handle: '@findmyjobs',
-    href: 'https://instagram.com/findmyjobs',
+    handle: '@findmyjobs_ig',
+    href: 'https://www.instagram.com/findmyjobs_ig?rpxt=MTdycmN3bnV6MTl4MQ==',
     icon: Instagram,
     hover: 'hover:text-pink-600',
   },
-  {
-    name: 'Facebook',
-    handle: '@findmyjobs',
-    href: 'https://facebook.com/findmyjobs',
-    icon: Facebook,
-    hover: 'hover:text-blue-600',
-  },
+  
   {
     name: 'X',
-    handle: '@findmyjobs',
-    href: 'https://x.com/findmyjobs',
+    handle: '@findmyjobs_x',
+    href: 'https://x.com/FindMyJobs_x',
     icon: XIcon,
     hover: 'hover:text-slate-900',
   },
-  {
-    name: 'LinkedIn',
-    handle: '@findmyjobs',
-    href: 'https://linkedin.com/company/findmyjobs',
-    icon: Linkedin,
-    hover: 'hover:text-sky-700',
-  },
+  
   {
     name: 'YouTube',
-    handle: '@findmyjobs',
-    href: 'https://youtube.com/@findmyjobs',
+    handle: '@findmyjobs_yt',
+    href: 'https://youtube.com/@findmyjobs_yt?si=q1-eZ-phbZ5pnfYK',
     icon: Youtube,
     hover: 'hover:text-red-600',
   },
+
+  {
+    name: 'Facebook',
+    handle: '@findmyjobs.fb',
+    href: 'https://www.facebook.com/share/1A498BRUCB/',
+    icon: Facebook,
+    hover: 'hover:text-blue-600',
+  },
+
 ].filter((s) => s.href);
 
 // Replace with your real links (Google Form, Tally, GitHub Issues, etc.)
-const REPORT_BUG_URL = 'https://forms.gle/your-bug-form-id';
-const FEEDBACK_URL = 'https://forms.gle/your-feedback-form-id';
+const REPORT_BUG_URL = 'https://forms.gle/EjE5zjCSSsdRd1Zh6';
+const FEEDBACK_URL = 'https://forms.gle/t4T3sKW5TnHW8MDe6';
 
 // Email option instead of a form:
 // const REPORT_BUG_URL = 'mailto:support@findmyjobs.com?subject=Bug%20Report';
