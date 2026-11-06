@@ -10,7 +10,7 @@ const WHATSAPP_DISPLAY = 'Opens your whatsapp app';
 
 // The email address that receives queries. Put your support email here,
 // for example: const SUPPORT_EMAIL = 'support@yourdomain.com';
-const SUPPORT_EMAIL = '';
+const SUPPORT_EMAIL = 'support@findmyjobs.in';
 
 const RESPONSE_TIME = '24 to 48 hours';
 

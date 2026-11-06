@@ -1,5 +1,7 @@
 
 
+
+
 // import React, { useState, useEffect, useRef } from 'react';
 
 // import { useAuth } from '../context/AuthContext.tsx';
@@ -62,6 +64,20 @@
 //   const [location, setLocation] = useState('');
 //   const [marketingOptIn, setMarketingOptIn] = useState(false);
 
+//   // Mandatory consent: Terms & Conditions + Privacy Policy (DPDP Act, 2023)
+//   const [termsAccepted, setTermsAccepted] = useState(false);
+//   // The Google callback is registered once, so it reads consent from a ref
+//   const termsAcceptedRef = useRef(false);
+//   const consentBoxRef = useRef<HTMLDivElement>(null);
+//   const [consentError, setConsentError] = useState(false);
+
+//   // Called whenever someone tries to sign up (Google or email) without ticking the box:
+//   // scrolls to the consent checkbox and highlights it
+//   const flagConsentMissing = () => {
+//     setConsentError(true);
+//     consentBoxRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+//   };
+
 //   const [loading, setLoading] = useState(false);
 //   const [error, setError] = useState<string | null>(null);
 
@@ -70,6 +86,7 @@
 
 //   // Google Sign-In
 //   const googleBtnRef = useRef<HTMLDivElement>(null);
+//   const googleWrapRef = useRef<HTMLDivElement>(null);
 //   const [googleLoading, setGoogleLoading] = useState(false);
 
 //   // OTP state (email)
@@ -96,6 +113,11 @@
 //     };
 //   }, []);
 
+//   // Keep the consent ref in sync with the checkbox
+//   useEffect(() => {
+//     termsAcceptedRef.current = termsAccepted;
+//   }, [termsAccepted]);
+
 //   // Load Google's Identity Services script and render the button
 //   useEffect(() => {
 //     if (!GOOGLE_CLIENT_ID) return;
@@ -113,17 +135,42 @@
 //         (window as any).__gsiInitialized = true;
 //       }
 
+//       // Fit the Google button inside the card on every screen size.
+//       // Google only accepts widths between 200 and 400 px, so measure the
+//       // real width of the wrapper and clamp it (a fixed 320 overflowed the card on mobile).
+//       const containerWidth =
+//         googleWrapRef.current?.getBoundingClientRect().width ||
+//         googleBtnRef.current.parentElement?.getBoundingClientRect().width ||
+//         280;
+//       const buttonWidth = Math.max(200, Math.min(400, Math.floor(containerWidth)));
+
+//       // Clear any previous render so the logo + text are redrawn at the new width
+//       googleBtnRef.current.innerHTML = '';
+
 //       window.google.accounts.id.renderButton(googleBtnRef.current, {
 //         theme: 'outline',
 //         size: 'large',
-//         width: '320',
+//         width: String(buttonWidth),
 //         text: 'signup_with',
 //       });
 //     };
 
+//     // Re-fit the button when the screen is resized / rotated
+//     let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+//     const onResize = () => {
+//       if (resizeTimer) clearTimeout(resizeTimer);
+//       resizeTimer = setTimeout(renderButton, 200);
+//     };
+//     window.addEventListener('resize', onResize);
+
+//     const cleanup = () => {
+//       window.removeEventListener('resize', onResize);
+//       if (resizeTimer) clearTimeout(resizeTimer);
+//     };
+
 //     if (document.getElementById(scriptId)) {
 //       renderButton();
-//       return;
+//       return cleanup;
 //     }
 
 //     const script = document.createElement('script');
@@ -135,11 +182,19 @@
 //     script.onload = renderButton;
 
 //     document.body.appendChild(script);
+
+//     return cleanup;
 //   }, []);
 
 //   const handleGoogleCredential = async (response: {
 //     credential: string;
 //   }) => {
+//     // Consent must be given before any account is created
+//     if (!termsAcceptedRef.current) {
+//       flagConsentMissing();
+//       return;
+//     }
+
 //     setGoogleLoading(true);
 //     setError(null);
 
@@ -151,6 +206,7 @@
 //         },
 //         body: JSON.stringify({
 //           credential: response.credential,
+//           terms_accepted: true,
 //         }),
 //       });
 
@@ -306,6 +362,11 @@
 //   const handleSubmit = async (e: React.FormEvent) => {
 //     e.preventDefault();
 
+//     if (!termsAccepted) {
+//       flagConsentMissing();
+//       return;
+//     }
+
 //     if (!otpVerified) {
 //       setError('Please verify your email with the OTP before continuing');
 //       return;
@@ -334,6 +395,8 @@
 //           phone: phone || undefined,
 //           age: age ? Number(age) : undefined,
 //           location: location || undefined,
+//           terms_accepted: true,
+//           marketing_opt_in: marketingOptIn,
 //         }),
 //       });
 
@@ -383,7 +446,36 @@
 //                 Signing up with Google...
 //               </div>
 //             ) : (
-//               <div ref={googleBtnRef} className="flex justify-center" />
+//               <div
+//                 ref={googleWrapRef}
+//                 className="relative w-full max-w-full min-h-[44px] rounded-xl"
+//               >
+//                 {/* pointer-events-none: the Google iframe cannot receive taps/clicks until consent is ticked.
+//                     The Google logo + text stay fully visible so users can see it is Google sign-up */}
+//                 <div
+//                   ref={googleBtnRef}
+//                   className={`flex justify-center w-full max-w-full ${
+//                     !termsAccepted ? 'pointer-events-none select-none' : ''
+//                   }`}
+//                   aria-hidden={!termsAccepted}
+//                 />
+
+//                 {/* Blocks the Google button until Terms & Privacy are accepted (works on touch screens too) */}
+//                 {!termsAccepted && (
+//                   <button
+//                     type="button"
+//                     onClick={flagConsentMissing}
+//                     onTouchStart={(e) => {
+//                       e.preventDefault();
+//                       e.stopPropagation();
+//                       flagConsentMissing();
+//                     }}
+//                     aria-label="Tick the Terms and Privacy Policy box to sign up with Google"
+//                     style={{ touchAction: 'none' }}
+//                     className="absolute inset-0 z-50 w-full h-full cursor-not-allowed bg-white/20 rounded-xl"
+//                   />
+//                 )}
+//               </div>
 //             )}
 
 //             <div className="flex items-center gap-3 my-5">
@@ -657,7 +749,62 @@
 //             </div>
 //           </div>
 
-//           {/* Marketing opt-in (optional, unchecked by default) */}
+//           {/* Terms & Privacy consent: required for BOTH Google and email sign-up (DPDP Act, 2023) */}
+//           <div
+//             ref={consentBoxRef}
+//             className={`p-3 rounded-xl border transition-colors ${
+//               consentError && !termsAccepted
+//                 ? 'border-rose-300 bg-rose-50'
+//                 : 'border-slate-200 bg-slate-50'
+//             }`}
+//           >
+//             <label className="flex items-start gap-2.5 text-xs text-slate-700 cursor-pointer">
+//               <input
+//                 type="checkbox"
+//                 id="register-terms-consent"
+//                 checked={termsAccepted}
+//                 onChange={(e) => {
+//                   setTermsAccepted(e.target.checked);
+//                   if (e.target.checked) setConsentError(false);
+//                 }}
+//                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+//               />
+//               <span className="leading-relaxed">
+//                 I am 18 years or older and I agree to the{' '}
+//                 <a
+//                   href="/terms"
+//                   target="_blank"
+//                   rel="noopener noreferrer"
+//                   className="text-indigo-600 font-semibold hover:underline"
+//                 >
+//                   Terms &amp; Conditions
+//                 </a>{' '}
+//                 and{' '}
+//                 <a
+//                   href="/privacy"
+//                   target="_blank"
+//                   rel="noopener noreferrer"
+//                   className="text-indigo-600 font-semibold hover:underline"
+//                 >
+//                   Privacy Policy
+//                 </a>
+//                 , and consent to FindMyJobs processing my personal data to create my
+//                 account and provide job access.{' '}
+//                 <span className="text-rose-500">*</span>
+//               </span>
+//             </label>
+
+//             {consentError && !termsAccepted && (
+//               <p className="text-[11px] text-rose-600 mt-1.5 pl-[26px] flex items-center gap-1">
+//                 <AlertCircle className="w-3 h-3 shrink-0" />
+//                 Please tick this box to continue with Google or email sign-up.
+//               </p>
+//             )}
+
+            
+//           </div>
+
+//           {/* Marketing opt-in (optional, unchecked by default, separate from required consent) */}
 //           <label className="flex items-start gap-2.5 text-xs text-slate-600 cursor-pointer">
 //             <input
 //               type="checkbox"
@@ -686,6 +833,8 @@
 //               </>
 //             ) : !otpVerified ? (
 //               <span>Verify Email to Continue</span>
+//             ) : !termsAccepted ? (
+//               <span>Accept Terms to Continue</span>
 //             ) : (
 //               <>
 //                 <span>Sign Up & Continue</span>
@@ -730,10 +879,25 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useState, useEffect, useRef } from 'react';
 
 import { useAuth } from '../context/AuthContext.tsx';
 import { PasswordChecklist, getPasswordIssues } from '../components/PasswordChecklist.tsx';
+import { getReferral, consumeReturnTo } from '../referral.ts'; // ADDED (creator referral)
 
 import {
   Lock,
@@ -935,6 +1099,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
         body: JSON.stringify({
           credential: response.credential,
           terms_accepted: true,
+          ref_code: getReferral() || undefined, // ADDED (creator referral)
         }),
       });
 
@@ -945,7 +1110,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
       }
 
       login(data.token, data.user);
-      navigate('/dashboard');
+      navigate(consumeReturnTo() || '/dashboard'); // CHANGED: returns to the job after a creator link
     } catch (err: any) {
       // Extract specific error message (including FastAPI 422 validation arrays)
       let errorMessage = 'Google sign-up failed';
@@ -1125,6 +1290,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
           location: location || undefined,
           terms_accepted: true,
           marketing_opt_in: marketingOptIn,
+          ref_code: getReferral() || undefined, // ADDED (creator referral)
         }),
       });
 
@@ -1135,7 +1301,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
       }
 
       login(data.token, data.user);
-      navigate('/dashboard');
+      navigate(consumeReturnTo() || '/dashboard'); // CHANGED: returns to the job after a creator link
     } catch (err: any) {
       setError(err.message || 'Registration failed');
     } finally {

@@ -18,6 +18,7 @@
 //   Mail,
 //   Copy,
 //   MoreHorizontal,
+//   Phone,
 //   X as CloseIcon,
 // } from 'lucide-react';
 
@@ -26,6 +27,63 @@
 //   navigate: (path: string) => void;
 //   onOpenCheckout: (slug: string) => void;
 // }
+
+// /* ---------- Apply method (link / phone / both) ---------- */
+
+// type ApplyInfo = {
+//   method: 'link' | 'phone' | 'both';
+//   phone: string;
+// };
+
+// // Read the apply fields straight from the API response so they work
+// // regardless of what sanitizeJob keeps.
+// const readApply = (raw: any): ApplyInfo => {
+//   const m = raw?.apply_method;
+//   return {
+//     method: m === 'phone' || m === 'both' ? m : 'link',
+//     phone: typeof raw?.application_phone === 'string' ? raw.application_phone.trim() : '',
+//   };
+// };
+
+// /* ---------- In-memory cache: revisiting a job opens instantly ---------- */
+
+// type DetailCacheEntry = { job: Job; apply: ApplyInfo; slug: string };
+// const detailCache = new Map<string, DetailCacheEntry>();
+
+// /* ---------- Loading skeleton (shown instead of a spinner) ---------- */
+
+// const DetailSkeleton: React.FC = () => (
+//   <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-pulse" aria-busy="true">
+//     <div className="h-4 w-32 bg-slate-200 rounded mb-6" />
+//     <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden">
+//       <div className="p-6 sm:p-10 space-y-8">
+//         <div className="flex flex-col md:flex-row justify-between gap-6 pb-6 border-b border-slate-200">
+//           <div className="space-y-3 w-full max-w-2xl">
+//             <div className="h-5 w-40 bg-slate-200 rounded-full" />
+//             <div className="h-9 w-3/4 bg-slate-200 rounded" />
+//             <div className="h-4 w-1/2 bg-slate-100 rounded" />
+//           </div>
+//           <div className="flex gap-3">
+//             <div className="h-11 w-24 bg-slate-100 rounded-xl" />
+//             <div className="h-11 w-44 bg-slate-200 rounded-xl" />
+//           </div>
+//         </div>
+//         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+//           {[0, 1, 2, 3].map((i) => (
+//             <div key={i} className="space-y-2">
+//               <div className="h-3 w-20 bg-slate-200 rounded" />
+//               <div className="h-4 w-16 bg-slate-200 rounded" />
+//             </div>
+//           ))}
+//         </div>
+//         <div className="space-y-2">
+//           <div className="h-3 w-40 bg-slate-200 rounded" />
+//           <div className="h-24 w-full bg-slate-100 rounded-2xl" />
+//         </div>
+//       </div>
+//     </div>
+//   </div>
+// );
 
 // /* ---------- Brand icons for the share popup ---------- */
 
@@ -82,6 +140,7 @@
 //   const { formatPrice, getPackageBySlug } = usePackages();
 
 //   const [job, setJob] = useState<Job | null>(null);
+//   const [apply, setApply] = useState<ApplyInfo>({ method: 'link', phone: '' });
 //   const [loading, setLoading] = useState(true);
 //   const [isLocked, setIsLocked] = useState(false);
 //   const [error, setError] = useState<string | null>(null);
@@ -94,15 +153,26 @@
 //     const controller = new AbortController();
 
 //     const fetchJobDetail = async () => {
-//       setLoading(true);
 //       setIsLocked(false);
 //       setError(null);
 //       setImgFailed(false);
 
 //       if (!token) {
-//         setIsLocked(true);
 //         setLoading(false);
+//         setIsLocked(true);
 //         return;
+//       }
+
+//       // Show the last loaded copy immediately (if any), then refresh in the background
+//       const cacheKey = `${token}|${jobId}`;
+//       const cached = detailCache.get(cacheKey);
+//       if (cached) {
+//         setJob(cached.job);
+//         setApply(cached.apply);
+//         setCategorySlug(cached.slug);
+//         setLoading(false);
+//       } else {
+//         setLoading(true);
 //       }
 
 //       try {
@@ -112,12 +182,14 @@
 //         });
 
 //         if (res.status === 403) {
+//           detailCache.delete(cacheKey);
 //           const errData = await res.json().catch(() => ({}));
 //           setCategorySlug(errData.category || 'it');
 //           setIsLocked(true);
 //           return;
 //         }
 //         if (res.status === 404) {
+//           detailCache.delete(cacheKey);
 //           setJob(null);
 //           return;
 //         }
@@ -128,13 +200,22 @@
 //           throw new Error('Failed to load job details');
 //         }
 
-//         const data = sanitizeJob(await res.json());
+//         const raw = await res.json();
+//         const data = sanitizeJob(raw);
+//         const applyInfo = readApply(raw);
 //         setJob(data);
+//         setApply(applyInfo);
 //         setCategorySlug(data.category_id || 'it');
+//         detailCache.set(cacheKey, {
+//           job: data,
+//           apply: applyInfo,
+//           slug: data.category_id || 'it',
+//         });
 //       } catch (err: any) {
 //         if (err?.name === 'AbortError') return;
 //         console.error('Job details error:', err);
-//         setError(err?.message || 'Failed to load job details');
+//         // If we are already showing a cached copy, keep it instead of an error screen
+//         if (!cached) setError(err?.message || 'Failed to load job details');
 //       } finally {
 //         if (!controller.signal.aborted) setLoading(false);
 //       }
@@ -193,12 +274,7 @@
 //   const pkg = getPackageBySlug(categorySlug) || { price: 49, name: 'Job Access' };
 
 //   if (loading) {
-//     return (
-//       <div className="py-24 text-center text-slate-400 space-y-3">
-//         <Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-600" />
-//         <p className="text-sm">Loading job details from server...</p>
-//       </div>
-//     );
+//     return <DetailSkeleton />;
 //   }
 
 //   if (isLocked) {
@@ -251,7 +327,7 @@
 //       <div className="max-w-xl mx-auto px-4 py-16 text-center text-slate-500 space-y-3">
 //         <AlertCircle className="w-10 h-10 mx-auto text-slate-400" />
 //         <h2 className="text-xl font-bold text-slate-800">Job Not Found</h2>
-//         <p className="text-xs">The job listing you are looking for may have been archived or removed.</p>
+//         <p className="text-xs">The job listing you are looking for may have expired, been archived or removed.</p>
 //         <button
 //           onClick={() => navigate('/dashboard')}
 //           className="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-xl"
@@ -265,6 +341,11 @@
 //   const category = job.category_id || 'it';
 //   const applyUrl = safeUrl(job.application_url);
 //   const poster = safeUrl(job.poster_image);
+
+//   // Which apply options this job offers (set by the admin)
+//   const phoneDigits = apply.phone.replace(/[^\d+]/g, '');
+//   const showLink = apply.method !== 'phone' && Boolean(applyUrl);
+//   const showPhone = apply.method !== 'link' && phoneDigits.length >= 5;
 
 //   return (
 //     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -281,6 +362,7 @@
 //             <img
 //               src={poster}
 //               alt={job.title}
+//               decoding="async"
 //               referrerPolicy="no-referrer"
 //               onError={() => setImgFailed(true)}
 //               className="w-full h-full object-cover"
@@ -415,7 +497,8 @@
 //                 )}
 //               </div>
 
-//               {applyUrl ? (
+//               {/* Apply by link, by phone, or both (chosen by the admin per job) */}
+//               {showLink && (
 //                 <a
 //                   id="btn-apply-external"
 //                   href={applyUrl}
@@ -426,7 +509,20 @@
 //                   <span>Apply Now (External Portal)</span>
 //                   <ExternalLink className="w-4 h-4" />
 //                 </a>
-//               ) : (
+//               )}
+
+//               {showPhone && (
+//                 <a
+//                   id="btn-apply-phone"
+//                   href={`tel:${phoneDigits}`}
+//                   className="px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+//                 >
+//                   <Phone className="w-4 h-4" />
+//                   <span>Call {apply.phone}</span>
+//                 </a>
+//               )}
+
+//               {!showLink && !showPhone && (
 //                 <span className="px-6 py-3.5 bg-slate-200 text-slate-500 font-bold rounded-xl text-sm text-center">
 //                   Application link unavailable
 //                 </span>
@@ -517,25 +613,42 @@
 //             </div>
 //           )}
 
-//           {applyUrl && (
+//           {(showLink || showPhone) && (
 //             <div className="p-6 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl border border-indigo-100 flex flex-col sm:flex-row items-center justify-between gap-4">
 //               <div className="space-y-1">
 //                 <h4 className="font-bold text-slate-900 text-sm">
 //                   Ready to submit your application?
 //                 </h4>
 //                 <p className="text-xs text-slate-600">
-//                   You will be redirected directly to {job.company_name}&apos;s career portal.
+//                   {showLink && showPhone
+//                     ? `Apply on ${job.company_name}'s career portal or call to apply.`
+//                     : showLink
+//                       ? `You will be redirected directly to ${job.company_name}'s career portal.`
+//                       : `Call ${apply.phone} to apply with ${job.company_name}.`}
 //                 </p>
 //               </div>
-//               <a
-//                 href={applyUrl}
-//                 target="_blank"
-//                 rel="noopener noreferrer nofollow"
-//                 className="w-full sm:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs"
-//               >
-//                 <span>Open Application Portal</span>
-//                 <ExternalLink className="w-3.5 h-3.5" />
-//               </a>
+//               <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2">
+//                 {showLink && (
+//                   <a
+//                     href={applyUrl}
+//                     target="_blank"
+//                     rel="noopener noreferrer nofollow"
+//                     className="w-full sm:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+//                   >
+//                     <span>Open Application Portal</span>
+//                     <ExternalLink className="w-3.5 h-3.5" />
+//                   </a>
+//                 )}
+//                 {showPhone && (
+//                   <a
+//                     href={`tel:${phoneDigits}`}
+//                     className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+//                   >
+//                     <Phone className="w-3.5 h-3.5" />
+//                     <span>Call {apply.phone}</span>
+//                   </a>
+//                 )}
+//               </div>
 //             </div>
 //           )}
 //         </div>
@@ -543,11 +656,6 @@
 //     </div>
 //   );
 // };
-
-
-
-
-
 
 
 
@@ -707,7 +815,7 @@ export const JobDetailPage: React.FC<JobDetailPageProps> = ({
   navigate,
   onOpenCheckout,
 }) => {
-  const { token } = useAuth();
+  const { token, access } = useAuth(); // CHANGED: also reads `access` (refreshes after a payment)
   const { formatPrice, getPackageBySlug } = usePackages();
 
   const [job, setJob] = useState<Job | null>(null);
@@ -719,6 +827,7 @@ export const JobDetailPage: React.FC<JobDetailPageProps> = ({
   const [copied, setCopied] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false); // NEW
   const [imgFailed, setImgFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0); // ADDED: bumped to reload the job after a purchase
 
   useEffect(() => {
     const controller = new AbortController();
@@ -794,7 +903,28 @@ export const JobDetailPage: React.FC<JobDetailPageProps> = ({
 
     fetchJobDetail();
     return () => controller.abort();
-  }, [jobId, token]);
+  }, [jobId, token, reloadKey]); // CHANGED: reloadKey added
+
+  // ADDED: after a successful payment the app refreshes `access`. If this page is still showing the
+  // "locked" screen, quietly check whether the job opens now, and if so reload it. Nothing changes
+  // on screen when it is still locked (no flicker).
+  useEffect(() => {
+    if (!isLocked || !token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/jobs/${encodeURIComponent(jobId)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok && !cancelled) setReloadKey((k) => k + 1);
+      } catch {
+        /* ignore: the locked screen simply stays */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [access]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ---------- Share logic (NEW) ---------- */
 
