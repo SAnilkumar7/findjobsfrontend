@@ -507,7 +507,7 @@ export const Footer: React.FC<FooterProps> = ({ navigate }) => {
               onClick={() => navigate('/admin/login')}
               className="text-slate-400 hover:text-slate-600 underline"
             >
-              Admin Access
+              Thanks
             </button>
           </div>
         </div>

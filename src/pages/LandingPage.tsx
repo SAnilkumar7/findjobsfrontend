@@ -232,7 +232,7 @@ const CurvedArrow: React.FC<{ className?: string; flip?: boolean }> = ({
 
 const SAMPLE_JOBS = [
   { title: 'Software Developer', org: 'IT Company', city: 'Bengaluru', tag: 'IT', tone: 'bg-indigo-100 text-indigo-700' },
-  { title: 'Probationary Officer', org: 'Bank', city: 'Pan India', tag: 'Banking', tone: 'bg-emerald-100 text-emerald-700' },
+  { title: 'Banking Manager', org: 'Bank', city: 'Pan India', tag: 'Banking', tone: 'bg-emerald-100 text-emerald-700' },
   { title: 'Sales Executive', org: 'Retail Group', city: 'Mumbai', tag: 'Non-IT', tone: 'bg-amber-100 text-amber-700' },
 ];
 

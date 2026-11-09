@@ -658,7 +658,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ navigate }) => {
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-slate-50">
       <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 p-8 shadow-xs">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-slate-900">It's Wonderful to Have You Here!</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Welcome Back to FindMyJobs!</h1>
           <p className="text-xs text-slate-500 mt-1">
             Sign in to view your unlocked job categories
           </p>
