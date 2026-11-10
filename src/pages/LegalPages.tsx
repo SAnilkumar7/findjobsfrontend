@@ -42,6 +42,21 @@ export const LegalPages: React.FC<LegalPageProps> = ({ type, navigate }) => {
                 Users agree not to scrape, distribute, reproduce, or resell access to the curated listings without prior written consent from the platform administrators.
               </p>
             </section>
+            <section className="space-y-2">
+            <h2 className="text-base font-bold text-slate-900">5. Fraud Warning & Reporting</h2>
+            <p>
+              Do not pay any money to any individual, recruiter, or company for a job listed on FindMyJobs. 
+              The only payment on this platform is the one-time category access fee, paid through Razorpay on our website.
+            </p>
+            <p>
+              If you pay any amount to a third party in connection with a job or application link, 
+              FindMyJobs is not responsible for that payment or any loss arising from it.
+            </p>
+            <p>
+              If you come across a suspicious listing or anyone asking you for money, please report it to us immediately 
+              on the <a href="/queries" className="text-blue-600 underline">Queries page</a> so we can review and remove it.
+            </p>
+          </section>
           </div>
         );
 

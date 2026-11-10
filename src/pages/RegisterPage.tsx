@@ -1,11 +1,10 @@
 
 
-
-
 // import React, { useState, useEffect, useRef } from 'react';
 
 // import { useAuth } from '../context/AuthContext.tsx';
 // import { PasswordChecklist, getPasswordIssues } from '../components/PasswordChecklist.tsx';
+// import { getReferral, consumeReturnTo } from '../referral.ts'; // ADDED (creator referral)
 
 // import {
 //   Lock,
@@ -207,6 +206,7 @@
 //         body: JSON.stringify({
 //           credential: response.credential,
 //           terms_accepted: true,
+//           ref_code: getReferral() || undefined, // ADDED (creator referral)
 //         }),
 //       });
 
@@ -217,7 +217,7 @@
 //       }
 
 //       login(data.token, data.user);
-//       navigate('/dashboard');
+//       navigate(consumeReturnTo() || '/dashboard'); // CHANGED: returns to the job after a creator link
 //     } catch (err: any) {
 //       // Extract specific error message (including FastAPI 422 validation arrays)
 //       let errorMessage = 'Google sign-up failed';
@@ -397,6 +397,7 @@
 //           location: location || undefined,
 //           terms_accepted: true,
 //           marketing_opt_in: marketingOptIn,
+//           ref_code: getReferral() || undefined, // ADDED (creator referral)
 //         }),
 //       });
 
@@ -407,7 +408,7 @@
 //       }
 
 //       login(data.token, data.user);
-//       navigate('/dashboard');
+//       navigate(consumeReturnTo() || '/dashboard'); // CHANGED: returns to the job after a creator link
 //     } catch (err: any) {
 //       setError(err.message || 'Registration failed');
 //     } finally {
@@ -878,21 +879,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import React, { useState, useEffect, useRef } from 'react';
 
 import { useAuth } from '../context/AuthContext.tsx';
@@ -952,6 +938,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
+  const [phoneError, setPhoneError] = useState<string | null>(null); // ADDED (phone validation)
   const [age, setAge] = useState('');
   const [location, setLocation] = useState('');
   const [marketingOptIn, setMarketingOptIn] = useState(false);
@@ -1260,6 +1247,12 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
       return;
     }
 
+    // ADDED: Phone is optional, but if entered it must be exactly 10 digits (India)
+    if (phone && phone.length !== 10) {
+      setPhoneError('Enter a valid 10-digit mobile number');
+      return;
+    }
+
     if (!otpVerified) {
       setError('Please verify your email with the OTP before continuing');
       return;
@@ -1285,7 +1278,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
           email,
           password,
           otp_code: otpCode.trim(),
-          phone: phone || undefined,
+          phone: phone ? `+91${phone}` : undefined, // CHANGED: default India (+91)
           age: age ? Number(age) : undefined,
           location: location || undefined,
           terms_accepted: true,
@@ -1567,27 +1560,51 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ navigate }) => {
 
             {/* Phone Number */}
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">
+              <label
+                htmlFor="register-phone"
+                className="block text-xs font-medium text-slate-600 mb-1"
+              >
                 Phone Number{' '}
                 <span className="text-slate-400">
                   (Optional)
                 </span>
               </label>
 
-              <div className="relative">
+              <div
+                className={`relative flex items-stretch bg-slate-50 border rounded-xl focus-within:ring-2 focus-within:ring-indigo-500 focus-within:bg-white ${
+                  phoneError ? 'border-rose-300' : 'border-slate-300'
+                }`}
+              >
+                {/* Fixed India country code */}
+                <span className="flex items-center px-3.5 text-sm font-medium text-slate-700 border-r border-slate-300 select-none">
+                  +91
+                </span>
+
                 <input
                   id="register-phone"
                   type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel-national"
+                  maxLength={10}
                   value={phone}
-                  onChange={(e) =>
-                    setPhone(e.target.value)
-                  }
-                  placeholder="+91 98765 43210"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
+                  onChange={(e) => {
+                    // digits only, max 10
+                    setPhone(e.target.value.replace(/\D/g, '').slice(0, 10));
+                    setPhoneError(null);
+                  }}
+                  placeholder="98765 43210"
+                  className="flex-1 min-w-0 px-3 py-2.5 pr-10 bg-transparent text-sm focus:outline-none"
                 />
 
                 <Phone className="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
               </div>
+
+              {phoneError && (
+                <p className="text-[11px] text-rose-600 mt-1.5 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {phoneError}
+                </p>
+              )}
             </div>
 
             {/* Age */}
