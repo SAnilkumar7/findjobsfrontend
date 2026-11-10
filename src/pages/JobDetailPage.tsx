@@ -1,5 +1,7 @@
 
 
+
+
 // import React, { useEffect, useState } from 'react';
 // import type { Job } from '../types/index.ts';
 // import { useAuth } from '../context/AuthContext.tsx';
@@ -136,7 +138,7 @@
 //   navigate,
 //   onOpenCheckout,
 // }) => {
-//   const { token } = useAuth();
+//   const { token, access } = useAuth(); // CHANGED: also reads `access` (refreshes after a payment)
 //   const { formatPrice, getPackageBySlug } = usePackages();
 
 //   const [job, setJob] = useState<Job | null>(null);
@@ -148,6 +150,7 @@
 //   const [copied, setCopied] = useState(false);
 //   const [showShareMenu, setShowShareMenu] = useState(false); // NEW
 //   const [imgFailed, setImgFailed] = useState(false);
+//   const [reloadKey, setReloadKey] = useState(0); // ADDED: bumped to reload the job after a purchase
 
 //   useEffect(() => {
 //     const controller = new AbortController();
@@ -223,7 +226,28 @@
 
 //     fetchJobDetail();
 //     return () => controller.abort();
-//   }, [jobId, token]);
+//   }, [jobId, token, reloadKey]); // CHANGED: reloadKey added
+
+//   // ADDED: after a successful payment the app refreshes `access`. If this page is still showing the
+//   // "locked" screen, quietly check whether the job opens now, and if so reload it. Nothing changes
+//   // on screen when it is still locked (no flicker).
+//   useEffect(() => {
+//     if (!isLocked || !token) return;
+//     let cancelled = false;
+//     (async () => {
+//       try {
+//         const res = await fetch(`/api/jobs/${encodeURIComponent(jobId)}`, {
+//           headers: { Authorization: `Bearer ${token}` },
+//         });
+//         if (res.ok && !cancelled) setReloadKey((k) => k + 1);
+//       } catch {
+//         /* ignore: the locked screen simply stays */
+//       }
+//     })();
+//     return () => {
+//       cancelled = true;
+//     };
+//   }, [access]); // eslint-disable-line react-hooks/exhaustive-deps
 
 //   /* ---------- Share logic (NEW) ---------- */
 
@@ -676,9 +700,6 @@
 
 
 
-
-
-
 import React, { useEffect, useState } from 'react';
 import type { Job } from '../types/index.ts';
 import { useAuth } from '../context/AuthContext.tsx';
@@ -698,6 +719,7 @@ import {
   Copy,
   MoreHorizontal,
   Phone,
+  Star, // ADDED (stars)
   X as CloseIcon,
 } from 'lucide-react';
 
@@ -1083,6 +1105,26 @@ export const JobDetailPage: React.FC<JobDetailPageProps> = ({
                 <span className="text-xs text-slate-500 font-medium">
                   {job.job_type} • {job.work_mode}
                 </span>
+
+                {/* ADDED (stars): admin-chosen rating, 1-3 stars (hidden when 0) */}
+                {(job.rating ?? 0) > 0 && (
+                  <span
+                    className="flex items-center gap-0.5"
+                    title={`${job.rating} out of 3 stars`}
+                    aria-label={`${job.rating} out of 3 stars`}
+                  >
+                    {[1, 2, 3].map((n) => (
+                      <Star
+                        key={n}
+                        className={`w-4 h-4 ${
+                          n <= (job.rating ?? 0)
+                            ? 'fill-amber-400 text-amber-400'
+                            : 'text-slate-300'
+                        }`}
+                      />
+                    ))}
+                  </span>
+                )}
               </div>
 
               <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">

@@ -1,3 +1,6 @@
+
+
+
 // export type AccessType = 'IT' | 'NON_IT' | 'BANKING' | 'ALL';
 
 // export type JobCategory = 'it' | 'non-it' | 'banking';
@@ -5,6 +8,8 @@
 // export type JobStatus = 'Draft' | 'Published' | 'Archived';
 
 // export type PaymentStatus = 'Successful' | 'Failed' | 'Pending' | 'Refunded';
+
+// export type ApplyMethod = 'link' | 'phone' | 'both';
 
 // export interface User {
 //   id: string;
@@ -69,7 +74,9 @@
 //   eligibility: string;
 //   requirements: string;
 //   additional_information?: string;
-//   application_url: string;
+//   application_url: string; // empty for phone-only jobs
+//   apply_method?: ApplyMethod; // link | phone | both (defaults to link)
+//   application_phone?: string; // used when apply_method is phone or both
 //   deadline: string;
 //   status: JobStatus;
 //   created_by: string;
@@ -175,6 +182,13 @@
 
 
 
+
+
+
+
+
+
+
 export type AccessType = 'IT' | 'NON_IT' | 'BANKING' | 'ALL';
 
 export type JobCategory = 'it' | 'non-it' | 'banking';
@@ -257,6 +271,7 @@ export interface Job {
   created_at: string;
   updated_at: string;
   poster_image?: string;
+  rating?: number; // ADDED (stars): 0-3, set by admin
 }
 
 export interface Payment {
