@@ -1,7 +1,13 @@
+
+
+
+
+
 // import React, { useState } from 'react';
 // import type { Package } from '../types/index.ts';
 // import { useAuth } from '../context/AuthContext.tsx';
 // import { usePackages } from '../context/PackagesContext.tsx';
+// import { getReferral, clearReferral } from '../referral.ts'; // ADDED (creator referral)
 // import {
 //   X,
 //   CheckCircle2,
@@ -80,7 +86,7 @@
 //           'Content-Type': 'application/json',
 //           Authorization: `Bearer ${token}`,
 //         },
-//         body: JSON.stringify({ package_id: packageItem.id }),
+//         body: JSON.stringify({ package_id: packageItem.id, ref_code: getReferral() || undefined }), // ADDED ref_code
 //       });
 
 //       if (!orderRes.ok) {
@@ -134,6 +140,7 @@
 
 //             const verifyData = await verifyRes.json();
 //             setVerifiedPayment(verifyData);
+//             clearReferral(); // ADDED: purchase done, forget the creator code
 //             await refreshAccess();
 //             setSuccess(true);
 //             onSuccess(packageItem.slug);
@@ -385,11 +392,17 @@
 
 
 
+
+
+
+
+
 import React, { useState } from 'react';
 import type { Package } from '../types/index.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { usePackages } from '../context/PackagesContext.tsx';
 import { getReferral, clearReferral } from '../referral.ts'; // ADDED (creator referral)
+import { notify } from './Notifications.tsx'; // TOAST
 import {
   X,
   CheckCircle2,
@@ -421,6 +434,9 @@ const loadRazorpay = (): Promise<boolean> =>
     script.onerror = () => resolve(false);
     document.body.appendChild(script);
   });
+
+// TOAST: statuses for which apiBase.ts already shows a global toast
+const GLOBAL_TOASTED_STATUSES = [429, 502, 503, 504];
 
 interface PaymentModalProps {
   packageItem: Package;
@@ -454,6 +470,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     setLoading(true);
     setError(null);
 
+    // TOAST: loading toast shown while the order is being created
+    const loadingToast = notify.loading('Opening secure payment...');
+    // TOAST: becomes true once the user completes payment, so "cancelled" is not shown after success
+    let paid = false;
+
     try {
       // 0. Make sure the Razorpay script is loaded before creating an order
       const gatewayReady = await loadRazorpay();
@@ -472,8 +493,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       });
 
       if (!orderRes.ok) {
-        const errData = await orderRes.json();
-        throw new Error(errData.detail || 'Failed to initialize payment order');
+        const errData = await orderRes.json().catch(() => ({})); // TOAST: safe against non-JSON (cold start) bodies
+        const orderErr: any = new Error(errData.detail || 'Failed to initialize payment order');
+        // TOAST: apiBase.ts already showed a toast for these statuses
+        if (GLOBAL_TOASTED_STATUSES.includes(orderRes.status)) orderErr.__toasted = true;
+        throw orderErr;
       }
 
       const orderData = await orderRes.json();
@@ -481,6 +505,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       if (!(window as any).Razorpay) {
         throw new Error('Payment gateway failed to load. Please refresh and try again.');
       }
+
+      // TOAST: order is ready, Razorpay window is about to open
+      notify.dismiss(loadingToast);
 
       // Real Razorpay checkout flow
       const options = {
@@ -499,6 +526,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           color: '#4f46e5',
         },
         handler: async function (response: any) {
+          paid = true; // TOAST: user completed payment, so do not show "cancelled"
+          const verifyToast = notify.loading('Verifying your payment...'); // TOAST
           try {
             setLoading(true);
             const verifyRes = await fetch('/api/payments/verify', {
@@ -516,7 +545,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             });
 
             if (!verifyRes.ok) {
-              const vErr = await verifyRes.json();
+              const vErr = await verifyRes.json().catch(() => ({})); // TOAST: safe against non-JSON bodies
               throw new Error(vErr.detail || 'Payment signature verification failed.');
             }
 
@@ -526,8 +555,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             await refreshAccess();
             setSuccess(true);
             onSuccess(packageItem.slug);
+            // TOAST: shown only after the backend verified the payment
+            notify.success('Payment successful. Access unlocked 🎉', verifyToast);
           } catch (verErr: any) {
             setError(verErr.message || 'Payment verification failed');
+            // TOAST: tell the user what to do if money was deducted
+            notify.error(
+              `${verErr.message || 'Payment verification failed'}. If money was deducted, contact support@findmyjobs.in with your payment ID.`,
+              verifyToast
+            );
           } finally {
             setLoading(false);
           }
@@ -535,20 +571,31 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         modal: {
           ondismiss: function () {
             setLoading(false);
+            // TOAST: user closed the Razorpay window without paying
+            if (!paid) notify.info('Payment cancelled', 'pay-cancel');
           },
         },
       };
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (resp: any) {
-        setError(resp.error?.description || 'Payment was declined or cancelled');
+        const failMsg = resp.error?.description || 'Payment was declined or cancelled';
+        setError(failMsg);
         setLoading(false);
+        notify.error(`Payment failed: ${failMsg}. You were not charged.`, 'pay-failed'); // TOAST
       });
       rzp.open();
     } catch (err: any) {
       console.error('Payment flow error:', err);
-      setError(err.message || 'Payment processing failed. Please try again.');
+      const msg = err.message || 'Payment processing failed. Please try again.';
+      setError(msg);
       setLoading(false);
+      // TOAST: replace the loading toast with the error, unless apiBase.ts already toasted it
+      if (err?.__toasted) {
+        notify.dismiss(loadingToast);
+      } else {
+        notify.error(msg, loadingToast);
+      }
     }
   };
 
@@ -755,4 +802,4 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       </div>
     </div>
   );
-};
+};  

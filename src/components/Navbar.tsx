@@ -1,5 +1,6 @@
 
-// import React, { useState } from 'react';
+
+// import React, { useEffect, useState } from 'react';
 // import { useAuth } from '../context/AuthContext.tsx';
 // import { usePackages } from '../context/PackagesContext.tsx';
 // import {
@@ -10,6 +11,7 @@
 //   Lock,
 //   ChevronDown,
 //   Sparkles,
+//   ArrowRight,
 // } from 'lucide-react';
 
 // interface NavbarProps {
@@ -22,6 +24,17 @@
 //   const { settings } = usePackages();
 //   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 //   const [jobsDropdownOpen, setJobsDropdownOpen] = useState(false);
+//   const [scrolledPastHero, setScrolledPastHero] = useState(false);
+
+//   // Show the mobile "Get Access" button only on the home page, after the hero CTA has scrolled away
+//   useEffect(() => {
+//     const onScroll = () => setScrolledPastHero(window.scrollY > 560);
+//     onScroll();
+//     window.addEventListener('scroll', onScroll, { passive: true });
+//     return () => window.removeEventListener('scroll', onScroll);
+//   }, []);
+
+//   const showMobileCta = currentPath === '/' && scrolledPastHero && !mobileMenuOpen;
 
 //   const handleNav = (path: string) => {
 //     navigate(path);
@@ -39,23 +52,28 @@
 
 //   return (
 //     <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 shadow-xs">
-//       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+//       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
 //         {/* Brand Logo */}
 //         <div
 //           id="nav-brand-logo"
 //           onClick={() => handleNav('/')}
-//           className="flex items-center gap-2.5 cursor-pointer select-none group"
+//           className="flex items-center gap-2.5 cursor-pointer select-none group min-w-0"
 //         >
 //           <img
 //             src="/logo.svg"
 //             alt="FindMyJobs logo"
-//             className="h-10 w-auto transition-transform group-hover:scale-105"
+//             className="h-10 w-auto shrink-0 transition-transform group-hover:scale-105"
 //           />
-//           <div className="flex flex-col">
-//             <span className="font-bold text-lg text-slate-900 tracking-tight leading-none">
+//           <div className="flex flex-col min-w-0">
+//             <span className="font-bold text-lg text-slate-900 tracking-tight leading-none truncate">
 //               {siteTitle}
 //             </span>
-//             <span className="text-[10px] font-semibold text-indigo-600 tracking-wider uppercase">
+//             {/* Tagline hides on mobile while the Get Access button is showing, so nothing overlaps */}
+//             <span
+//               className={`text-[10px] font-semibold text-indigo-600 tracking-wider uppercase ${
+//                 showMobileCta ? 'hidden md:block' : ''
+//               }`}
+//             >
 //               Instant Job Access
 //             </span>
 //           </div>
@@ -273,8 +291,28 @@
 //           )}
 //         </div>
 
-//         {/* Mobile menu button */}
-//         <div className="flex md:hidden items-center gap-2">
+//         {/* Mobile: Get Access button (appears on scroll) + menu button */}
+//         <div className="flex md:hidden items-center shrink-0">
+//           <div
+//             className={`overflow-hidden whitespace-nowrap transition-all duration-300 ease-out ${
+//               showMobileCta
+//                 ? 'max-w-[150px] opacity-100 mr-2'
+//                 : 'max-w-0 opacity-0 mr-0 pointer-events-none'
+//             }`}
+//             aria-hidden={!showMobileCta}
+//           >
+//             <button
+//               id="nav-mobile-get-access-btn"
+//               type="button"
+//               tabIndex={showMobileCta ? 0 : -1}
+//               onClick={() => handleNav(user ? '/dashboard' : '/register')}
+//               className="h-9 px-3.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold shadow-md shadow-indigo-200 flex items-center gap-1.5 transition-colors"
+//             >
+//               <span>{user ? 'Dashboard' : 'Get Access'}</span>
+//               <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+//             </button>
+//           </div>
+
 //           <button
 //             id="nav-mobile-toggle"
 //             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -439,12 +477,10 @@
 
 
 
-
-
-
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { usePackages } from '../context/PackagesContext.tsx';
+import { notify } from './Notifications.tsx'; // TOAST (if Navbar is NOT inside the components folder, use '../components/Notifications.tsx')
 import {
   ShieldCheck,
   LogOut,
@@ -486,6 +522,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
 
   const handleLogout = async () => {
     await logout();
+    notify.success('Signed out successfully', 'logout'); // TOAST
     navigate('/');
     setMobileMenuOpen(false);
   };

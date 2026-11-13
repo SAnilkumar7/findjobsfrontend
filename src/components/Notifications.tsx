@@ -63,3 +63,30 @@ export function getErrorMessage(err: any, fallback = 'Something went wrong') {
     fallback
   );
 }
+
+// For fetch(): read the FastAPI error body from a failed Response
+export async function readError(res: Response, fallback = 'Something went wrong') {
+  try {
+    const data = await res.json();
+    if (typeof data?.detail === 'string') return data.detail;
+    // FastAPI validation errors come as an array
+    if (Array.isArray(data?.detail) && data.detail[0]?.msg) return data.detail[0].msg;
+    return data?.message || data?.error || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+// Use in pages when a fetch response is not ok.
+// Skips 429 / 502 / 503 / 504 because apiBase.ts already showed a toast for those.
+export async function notifyResponse(res: Response, fallback = 'Something went wrong') {
+  if ([429, 502, 503, 504].includes(res.status)) return;
+  notify.error(await readError(res, fallback));
+}
+
+// Use inside catch (err) blocks.
+// Skips network failures because apiBase.ts already showed a toast for those.
+export function notifyCatch(err: any, fallback = 'Something went wrong') {
+  if (err?.__toasted) return;
+  notify.error(getErrorMessage(err, fallback));
+}
