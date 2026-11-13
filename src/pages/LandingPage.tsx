@@ -394,12 +394,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ navigate, onOpenChecko
             </h2>
             </Reveal>
 
-            <Reveal delay={200}>
+            {/* <Reveal delay={200}>
               <p className="mt-5 sm:mt-6 text-base sm:text-lg text-slate-500 leading-relaxed max-w-xl mx-auto">
               {siteName} collects verified openings for IT, Non-IT and Banking careers in one
               clean place, then sends you straight to the official application page. No
               middlemen, no clutter.
             </p>
+            </Reveal> */}
+
+
+            <Reveal delay={200}>
+              <p className="mt-5 sm:mt-6 text-base sm:text-lg text-slate-500 leading-relaxed max-w-xl mx-auto">
+                {siteName} collects verified openings for IT, Non-IT and Banking careers in one
+                clean place, then sends you straight to the official application page.
+                No middlemen, Opportunities  for both {" "}
+                <span className="font-semibold text-indigo-600">Fresher's</span> and{" "}
+                <span className="font-semibold text-indigo-600">Experienced </span>professional.
+              </p>
             </Reveal>
 
             <Reveal delay={300}>
@@ -684,7 +695,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ navigate, onOpenChecko
                   <div className="p-5 lg:p-6">
                     <h3 className="text-lg lg:text-xl font-semibold text-slate-900">IT & Software Jobs</h3>
                     <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-                      Software Engineering, DevOps, Cloud, AI/ML, Full Stack, and Data openings.
+                      Software Engineering, Human Resources, DevOps,  Cloud, AI/ML, Full Stack, and Data Engineer.
                     </p>
                     <div className="mt-5 mb-4">
                       <span className="text-3xl font-bold text-indigo-600">
@@ -741,7 +752,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ navigate, onOpenChecko
                   <div className="p-5 lg:p-6">
                     <h3 className="text-lg lg:text-xl font-semibold text-slate-900">Non-IT Jobs</h3>
                     <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-                      Human Resources, Supply Chain, Operations, Marketing, and Administrative careers.
+                       Business Development Executive, Sales Executive, Digital Marketing,Customer Support,Business Analyst.
                     </p>
                     <div className="mt-5 mb-4">
                       <span className="text-3xl font-bold text-indigo-600">
@@ -798,7 +809,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ navigate, onOpenChecko
                   <div className="p-5 lg:p-6">
                     <h3 className="text-lg lg:text-xl font-semibold text-slate-900">Banking Jobs</h3>
                     <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-                      Commercial Banking, Risk Underwriting, Wealth Management, FinTech & NBFCs.
+                      Commercial Banking, Branch Manager,Relationship Manager,Insurance, FinTech & NBFCs.
                     </p>
                     <div className="mt-5 mb-4">
                       <span className="text-3xl font-bold text-indigo-600">

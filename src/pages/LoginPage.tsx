@@ -1,7 +1,23 @@
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // import React, { useState, useEffect, useRef } from 'react';
 // import { useAuth } from '../context/AuthContext.tsx';
+// import { getReferral, consumeReturnTo } from '../referral.ts'; // ADDED (creator referral)
 // import {
 //   Mail,
 //   ArrowRight,
@@ -11,6 +27,7 @@
 //   Eye,
 //   EyeOff,
 // } from 'lucide-react';
+
 
 // interface LoginPageProps {
 //   navigate: (path: string) => void;
@@ -84,6 +101,7 @@
 //         body: JSON.stringify({
 //           credential: response.credential,
 //           terms_accepted: true,
+//           ref_code: getReferral() || undefined, // ADDED (creator referral)
 //         }),
 //       });
 
@@ -96,7 +114,7 @@
 //       }
 
 //       login(data.token, data.user);
-//       navigate('/dashboard');
+//       navigate(consumeReturnTo() || '/dashboard'); // CHANGED: returns to the job after a creator link
 //     } catch (err: any) {
 //       setError(err.message || 'Google sign-in failed');
 //     } finally {
@@ -192,7 +210,7 @@
 //       }
 
 //       login(data.token, data.user);
-//       navigate('/dashboard');
+//       navigate(consumeReturnTo() || '/dashboard'); // CHANGED: returns to the job after a creator link
 //     } catch (err: any) {
 //       setError(err.message || 'Failed to sign in');
 //     } finally {
@@ -204,7 +222,7 @@
 //     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-slate-50">
 //       <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 p-8 shadow-xs">
 //         <div className="text-center mb-8">
-//           <h1 className="text-2xl font-bold text-slate-900">It's Wonderful to Have You Here!</h1>
+//           <h1 className="text-2xl font-bold text-slate-900">Welcome Back to FindMyJobs!</h1>
 //           <p className="text-xs text-slate-500 mt-1">
 //             Sign in to view your unlocked job categories
 //           </p>
@@ -451,19 +469,19 @@
 
 
 
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { getReferral, consumeReturnTo } from '../referral.ts'; // ADDED (creator referral)
+import { notify } from '../components/Notifications.tsx'; // ADDED (toast)
 import {
   Mail,
   ArrowRight,
   AlertCircle,
-  CheckCircle2,
   Loader2,
   Eye,
   EyeOff,
 } from 'lucide-react';
+
 
 interface LoginPageProps {
   navigate: (path: string) => void;
@@ -483,16 +501,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ navigate }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Shown after a successful password reset
-  const [resetSuccess, setResetSuccess] = useState(false);
-
+  // Shown after a successful password reset (now displayed as a toast)
   useEffect(() => {
     if (sessionStorage.getItem('passwordResetSuccess')) {
       sessionStorage.removeItem('passwordResetSuccess');
-      setResetSuccess(true);
+      notify.success('Password updated. Sign in with your new password.', 'reset-success'); // ADDED (toast)
     }
   }, []);
 
@@ -507,6 +522,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ navigate }) => {
   // scrolls to the consent checkbox and highlights it
   const flagConsentMissing = () => {
     setConsentError(true);
+    notify.warn('Please accept the Terms & Privacy Policy to continue with Google', 'consent'); // ADDED (toast)
     consentBoxRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
@@ -528,7 +544,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ navigate }) => {
     }
 
     setGoogleLoading(true);
-    setError(null);
 
     try {
       const res = await fetch('/api/auth/google', {
@@ -550,9 +565,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ navigate }) => {
       }
 
       login(data.token, data.user);
+      notify.success('Signed in with Google', 'google-success'); // ADDED (toast)
       navigate(consumeReturnTo() || '/dashboard'); // CHANGED: returns to the job after a creator link
     } catch (err: any) {
-      setError(err.message || 'Google sign-in failed');
+      notify.error(err.message || 'Google sign-in failed', 'google-error'); // ADDED (toast)
     } finally {
       setGoogleLoading(false);
     }
@@ -625,8 +641,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ navigate }) => {
     e.preventDefault();
     setShowPassword(false);
     setLoading(true);
-    setError(null);
-    setResetSuccess(false);
 
     try {
       const res = await fetch('/api/auth/login', {
@@ -646,9 +660,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ navigate }) => {
       }
 
       login(data.token, data.user);
+      notify.success('Welcome back! Signed in successfully', 'login-success'); // ADDED (toast)
       navigate(consumeReturnTo() || '/dashboard'); // CHANGED: returns to the job after a creator link
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in');
+      notify.error(err.message || 'Failed to sign in', 'login-error'); // ADDED (toast)
     } finally {
       setLoading(false);
     }
@@ -663,20 +678,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ navigate }) => {
             Sign in to view your unlocked job categories
           </p>
         </div>
-
-        {resetSuccess && (
-          <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-700 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
-            <span>Password updated. Sign in with your new password.</span>
-          </div>
-        )}
-
-        {error && (
-          <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
-            <span>{error}</span>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

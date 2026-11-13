@@ -56,6 +56,16 @@ export const LegalPages: React.FC<LegalPageProps> = ({ type, navigate }) => {
               If you come across a suspicious listing or anyone asking you for money, please report it to us immediately 
               on the <a href="/queries" className="text-blue-600 underline">Queries page</a> so we can review and remove it.
             </p>
+            <section className="space-y-2">
+              <h2 className="text-base font-bold text-slate-900">
+                6. Lifetime Access
+              </h2>
+              <p>
+                Lifetime access means access to the purchased services for as long as
+                the FindMyJobs website remains active and operational. If the website
+                is permanently discontinued, access will no longer be available.
+              </p>
+            </section>
           </section>
           </div>
         );

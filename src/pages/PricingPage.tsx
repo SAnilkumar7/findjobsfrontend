@@ -52,7 +52,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ navigate, onOpenChecko
             </div>
             <h3 className="font-bold text-slate-900 text-lg">IT Jobs Access</h3>
             <p className="text-xs text-slate-500 mt-1 min-h-[32px]">
-              Software, Data, AI/ML, Cloud & DevOps roles.
+               Software Engineering, Human Resources, DevOps,  Cloud, AI/ML, Full Stack, and Data Engineer.
             </p>
             <div className="my-5">
               <span className="text-3xl font-extrabold text-slate-900">
@@ -107,7 +107,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ navigate, onOpenChecko
             </div>
             <h3 className="font-bold text-slate-900 text-lg">Non-IT Jobs</h3>
             <p className="text-xs text-slate-500 mt-1 min-h-[32px]">
-              HR, Operations, Logistics & Marketing.
+              Business Development Executive, Sales Executive, Digital Marketing,Customer Support,Business Analyst.
             </p>
             <div className="my-5">
               <span className="text-3xl font-extrabold text-slate-900">
@@ -162,7 +162,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ navigate, onOpenChecko
             </div>
             <h3 className="font-bold text-slate-900 text-lg">Banking Jobs</h3>
             <p className="text-xs text-slate-500 mt-1 min-h-[32px]">
-              Private/PSU Banks, Wealth, Risk & FinTech.
+              Commercial Banking, Branch Manager,Relationship Manager,Insurance, FinTech & NBFCs.
             </p>
             <div className="my-5">
               <span className="text-3xl font-extrabold text-slate-900">

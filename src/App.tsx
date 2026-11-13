@@ -20,8 +20,7 @@
 // import { ProfilePage } from './pages/ProfilePage.tsx';
 // import * as LegalPagesModule from './pages/LegalPages.tsx';
 // import { QueriesPage } from './pages/QueriesPage.tsx';
-
-
+// import { ReferralRedirectPage } from './pages/ReferralRedirectPage.tsx'; // ADDED (creator referral)
 
 // // changes made
 // import { AboutPage } from './pages/AboutPage.tsx';
@@ -37,6 +36,7 @@
 // import { AdminUsersPage } from './pages/admin/AdminUsersPage.tsx';
 // import { AdminPaymentsPage } from './pages/admin/AdminPaymentsPage.tsx';
 // import { AdminSettingsPage } from './pages/admin/AdminSettingsPage.tsx';
+// import { AdminReferralsPage } from './pages/admin/AdminReferralsPage.tsx'; // ADDED (creator referral)
 
 // // LegalPages.tsx may use a named export (export const LegalPages) or a default export.
 // // This accepts both, so a missing named export can never blank the whole site.
@@ -134,6 +134,12 @@
 //       return <JobDetailPage jobId={jobId} navigate={navigate} onOpenCheckout={handleOpenCheckout} />;
 //     }
 
+//     // 5b. Creator referral link: /r/AbC1234  (ADDED)
+//     if (currentPath.startsWith('/r/')) {
+//       const refCode = currentPath.replace('/r/', '').split('/')[0];
+//       return <ReferralRedirectPage code={refCode} navigate={navigate} />;
+//     }
+
 //     // 6. Pricing & Plans
 //     if (currentPath === '/pricing') {
 //       return <PricingPage navigate={navigate} onOpenCheckout={handleOpenCheckout} />;
@@ -203,6 +209,10 @@
 //     if (currentPath === '/admin/settings') {
 //       return <AdminSettingsPage navigate={navigate} />;
 //     }
+//     // ADDED (creator referral admin screen)
+//     if (currentPath === '/admin/referrals') {
+//       return <AdminReferralsPage navigate={navigate} />;
+//     }
 
 //     // Fallback: Landing Page
 //     // return <LandingPage navigate={navigate} onOpenCheckout={handleOpenCheckout} />;
@@ -267,22 +277,13 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { PackagesProvider, usePackages } from './context/PackagesContext.tsx';
 import { Navbar } from './components/Navbar.tsx';
 import { Footer } from './components/Footer.tsx';
 import { PaymentModal } from './components/PaymentModal.tsx';
+import { AppToaster } from './components/Notifications.tsx'; // ADDED (toast)
 
 // User Pages
 import { LandingPage } from './pages/LandingPage.tsx';
@@ -533,6 +534,7 @@ export default function App() {
     <AuthProvider>
       <PackagesProvider>
         <MainRouter />
+        <AppToaster /> {/* ADDED (toast) */}
       </PackagesProvider>
     </AuthProvider>
   );
